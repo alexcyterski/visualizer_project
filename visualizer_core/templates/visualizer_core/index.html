@@ -17,8 +17,8 @@
         }
         
         canvas {
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             position: absolute;
             top: 0;
             left: 0;
@@ -129,6 +129,14 @@
             border-radius: 4px;
             z-index: 10;
         }
+        
+        .control-item.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .control-item.disabled input {
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -155,6 +163,20 @@
                     <option value="wave">Waveform</option>
                     <option value="circular">Circular</option>
                 </select>
+            </div>
+            <div class="control-item" id="mirroredModeControl">
+                <label for="mirroredMode">Mirrored Mode:</label>
+                <select id="mirroredMode">
+                    <option value="mirrored">Mirrored (Center)</option>
+                    <option value="top">From Top</option>
+                    <option value="bottom" selected>From Bottom</option>
+                </select>
+            </div>
+            <div class="control-item" id="autoScaleControl">
+                <label>
+                    <input type="checkbox" id="autoScale" checked>
+                    Auto-scale bars to fill screen
+                </label>
             </div>
         </div>
         
@@ -205,14 +227,36 @@
                 <input type="range" id="smoothing" min="0" max="0.95" step="0.05" value="0.8">
             </div>
             
-            <div class="control-item">
+            <div class="control-item" id="barWidthControl">
                 <label for="barWidth">Bar Width: <span id="barWidthValue">0.5</span></label>
                 <input type="range" id="barWidth" min="0.1" max="1" step="0.1" value="0.5">
             </div>
             
-            <div class="control-item">
+            <div class="control-item" id="barSpacingControl">
                 <label for="barSpacing">Bar Spacing: <span id="barSpacingValue">1</span></label>
                 <input type="range" id="barSpacing" min="0" max="5" step="1" value="1">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h3>Frequency Settings</h3>
+            <div class="control-item">
+                <label for="frequencyScaling">Frequency Scaling:</label>
+                <select id="frequencyScaling">
+                    <option value="logarithmic">Logarithmic (Natural)</option>
+                    <option value="linear">Linear</option>
+                    <option value="exponential">Exponential (Emphasize Highs)</option>
+                </select>
+            </div>
+            
+            <div class="control-item">
+                <label for="bassBoost">Bass Reduction: <span id="bassBoostValue">0</span></label>
+                <input type="range" id="bassBoost" min="0" max="100" value="0">
+            </div>
+            
+            <div class="control-item">
+                <label for="highBoost">High Boost: <span id="highBoostValue">0</span></label>
+                <input type="range" id="highBoost" min="0" max="100" value="0">
             </div>
         </div>
         
@@ -231,6 +275,17 @@
                 </select>
             </div>
         </div>
+        
+        <div class="control-group">
+            <h3>Frequency Scaling</h3>
+            <div class="control-item">
+                <label for="frequencyScale">Frequency Scale:</label>
+                <select id="frequencyScale">
+                    <option value="linear">Linear</option>
+                    <option value="logarithmic">Logarithmic</option>
+                </select>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -240,8 +295,6 @@
         let source;
         const canvas = document.getElementById('visualizer');
         const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
         let width = canvas.width;
         let height = canvas.height;
         const statusElement = document.getElementById('status');
@@ -257,7 +310,12 @@
             smoothing: 0.8,
             barWidth: 0.5,
             barSpacing: 1,
-            fftSize: 256
+            fftSize: 256,
+            frequencyScaling: 'logarithmic',
+            bassBoost: 0,
+            highBoost: 0,
+            mirroredMode: 'mirrored',
+            autoScale: true,
         };
         
         // Initialize UI controls
@@ -265,6 +323,8 @@
             // Visualization type
             document.getElementById('visualizationType').addEventListener('change', function() {
                 settings.visualizationType = this.value;
+                updateVisualizationControls();
+                updateAutoScaleControls();
             });
             
             // Color mode
@@ -361,6 +421,38 @@
             
             // Update color controls based on selected mode
             updateColorControls();
+
+            // Frequency scaling
+            document.getElementById('frequencyScaling').addEventListener('change', function() {
+                settings.frequencyScaling = this.value;
+            });
+
+            // Bass reduction
+            const bassBoostSlider = document.getElementById('bassBoost');
+            const bassBoostValue = document.getElementById('bassBoostValue');
+            bassBoostSlider.addEventListener('input', function() {
+                settings.bassBoost = parseInt(this.value);
+                bassBoostValue.textContent = this.value;
+            });
+
+            // High boost
+            const highBoostSlider = document.getElementById('highBoost');
+            const highBoostValue = document.getElementById('highBoostValue');
+            highBoostSlider.addEventListener('input', function() {
+                settings.highBoost = parseInt(this.value);
+                highBoostValue.textContent = this.value;
+            });
+
+            // Mirrored mode
+            document.getElementById('mirroredMode').addEventListener('change', function() {
+                settings.mirroredMode = this.value;
+            });
+
+            // Auto-scale option
+            document.getElementById('autoScale').addEventListener('change', function() {
+                settings.autoScale = this.checked;
+                updateAutoScaleControls();
+            });
         }
         
         function updateColorControls() {
@@ -376,6 +468,21 @@
             } else {
                 solidColorControl.style.display = 'none';
                 gradientControls.style.display = 'none';
+            }
+        }
+        
+        function updateVisualizationControls() {
+            const mirroredModeControl = document.getElementById('mirroredModeControl');
+            const autoScaleControl = document.getElementById('autoScaleControl');
+            
+            // Only show these controls for bar visualization
+            if (settings.visualizationType === 'bars') {
+                mirroredModeControl.style.display = 'block';
+                autoScaleControl.style.display = 'block';
+                updateAutoScaleControls();
+            } else {
+                mirroredModeControl.style.display = 'none';
+                autoScaleControl.style.display = 'none';
             }
         }
         
@@ -469,10 +576,10 @@
                 // Get frequency data
                 analyser.getByteFrequencyData(dataArray);
                 
-                // Clear canvas
-                ctx.clearRect(0, 0, width, height);
+                // Clear canvas - use the full viewport dimensions
+                ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
                 ctx.fillStyle = 'rgb(0, 0, 0)';
-                ctx.fillRect(0, 0, width, height);
+                ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
                 
                 // Choose visualization type
                 switch(settings.visualizationType) {
@@ -496,13 +603,64 @@
         // Draw bar visualization
         function drawBars(dataArray, bufferLength) {
             const barCount = bufferLength;
-            const barWidth = (width / barCount) * settings.barWidth;
-            const barSpacing = settings.barSpacing;
+            let barWidth, barSpacing;
             
+            if (settings.autoScale) {
+                // Use the FULL viewport width, regardless of the canvas size
+                const fullViewportWidth = window.innerWidth;
+                
+                // Auto-scale: Calculate width to fill the entire viewport
+                // We'll use the bar spacing setting as a ratio of the total width
+                const spacingRatio = settings.barSpacing / 10; // Convert to a ratio (0-0.5)
+                const totalSpacingWidth = fullViewportWidth * spacingRatio;
+                const totalBarWidth = fullViewportWidth - totalSpacingWidth;
+                
+                // Calculate individual bar width and spacing
+                barWidth = totalBarWidth / barCount;
+                barSpacing = totalSpacingWidth / (barCount - 1 || 1); // Avoid division by zero
+            } else {
+                // Use the user-defined settings
+                barWidth = (width / barCount) * settings.barWidth;
+                barSpacing = settings.barSpacing;
+            }
+            
+            // Calculate the vertical center of the screen
+            const centerY = height / 2;
+            
+            // Start drawing from the left edge of the viewport, not the canvas
             let x = 0;
+            
             for (let i = 0; i < barCount; i++) {
-                // Apply sensitivity
-                const barHeight = dataArray[i] * (settings.sensitivity / 5);
+                // Calculate the index based on frequency scaling
+                let index;
+                const normalizedI = i / barCount;
+                
+                if (settings.frequencyScaling === 'logarithmic') {
+                    // Logarithmic scaling (more space for lower frequencies)
+                    index = Math.floor(Math.pow(normalizedI, 0.5) * barCount);
+                } else if (settings.frequencyScaling === 'exponential') {
+                    // Exponential scaling (more space for higher frequencies)
+                    index = Math.floor(Math.pow(normalizedI, 2) * barCount);
+                } else {
+                    // Linear scaling (equal space for all frequencies)
+                    index = i;
+                }
+                
+                // Ensure index is within bounds
+                index = Math.min(index, bufferLength - 1);
+                
+                // Get the value and apply frequency-specific adjustments
+                let value = dataArray[index];
+                
+                // Apply bass reduction (for lower third of the spectrum)
+                if (i < barCount / 3) {
+                    value = Math.max(0, value - (settings.bassBoost / 100) * 255);
+                }
+                
+                // Apply high boost (for upper third of the spectrum)
+                if (i > (barCount * 2) / 3) {
+                    value = Math.min(255, value + (settings.highBoost / 100) * 255);
+                }
                 
                 // Set color based on color mode
                 if (settings.colorMode === 'solid') {
@@ -526,11 +684,28 @@
                     ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
                 }
                 
-                // Draw bar
-                ctx.fillRect(x, height - barHeight, barWidth, barHeight);
+                // Apply sensitivity and calculate bar height
+                const barHeight = value * (settings.sensitivity / 5);
+                
+                // Draw based on the selected mode
+                if (settings.mirroredMode === 'mirrored') {
+                    // Mirrored mode (center)
+                    const halfBarHeight = barHeight / 2;
+                    ctx.fillRect(x, centerY - halfBarHeight, barWidth, halfBarHeight);
+                    ctx.fillRect(x, centerY, barWidth, halfBarHeight);
+                } else if (settings.mirroredMode === 'top') {
+                    // From top
+                    ctx.fillRect(x, 0, barWidth, barHeight);
+                } else {
+                    // From bottom (default)
+                    ctx.fillRect(x, height - barHeight, barWidth, barHeight);
+                }
                 
                 // Move to next bar position
                 x += barWidth + barSpacing;
+                
+                // If we've gone beyond the viewport width, we can stop drawing
+                if (x > window.innerWidth) break;
             }
         }
         
@@ -572,8 +747,39 @@
             const angleStep = (2 * Math.PI) / barCount;
             
             for (let i = 0; i < barCount; i++) {
+                // Calculate the index based on frequency scaling
+                let index;
+                const normalizedI = i / barCount;
+                
+                if (settings.frequencyScaling === 'logarithmic') {
+                    // Logarithmic scaling (more space for lower frequencies)
+                    index = Math.floor(Math.pow(normalizedI, 0.5) * barCount);
+                } else if (settings.frequencyScaling === 'exponential') {
+                    // Exponential scaling (more space for higher frequencies)
+                    index = Math.floor(Math.pow(normalizedI, 2) * barCount);
+                } else {
+                    // Linear scaling (equal space for all frequencies)
+                    index = i;
+                }
+                
+                // Ensure index is within bounds
+                index = Math.min(index, bufferLength - 1);
+                
+                // Get the value and apply frequency-specific adjustments
+                let value = dataArray[index];
+                
+                // Apply bass reduction (for lower third of the spectrum)
+                if (i < barCount / 3) {
+                    value = Math.max(0, value - (settings.bassBoost / 100) * 255);
+                }
+                
+                // Apply high boost (for upper third of the spectrum)
+                if (i > (barCount * 2) / 3) {
+                    value = Math.min(255, value + (settings.highBoost / 100) * 255);
+                }
+                
                 // Apply sensitivity
-                const barHeight = (dataArray[i] * (settings.sensitivity / 5)) / 256 * radius;
+                const barHeight = (value * (settings.sensitivity / 5)) / 256 * radius;
                 
                 // Calculate angle
                 const angle = i * angleStep;
@@ -623,8 +829,42 @@
             height = canvas.height;
         });
         
+        // Ensure the canvas is properly sized on initialization
+        function initCanvas() {
+            // Set canvas dimensions to match the viewport exactly
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            width = canvas.width;
+            height = canvas.height;
+            
+            // Force the canvas to take up the full viewport
+            canvas.style.width = '100vw';
+            canvas.style.height = '100vh';
+            canvas.style.position = 'absolute';
+            canvas.style.top = '0';
+            canvas.style.left = '0';
+            canvas.style.zIndex = '1';
+        }
+
+        // Add this function to toggle the animation controls based on auto-scale setting
+        function updateAutoScaleControls() {
+            const barWidthControl = document.getElementById('barWidthControl');
+            const barSpacingControl = document.getElementById('barSpacingControl');
+            const isAutoScaleEnabled = document.getElementById('autoScale').checked;
+            
+            // Disable or enable the controls based on auto-scale setting
+            barWidthControl.classList.toggle('disabled', isAutoScaleEnabled);
+            barSpacingControl.classList.toggle('disabled', isAutoScaleEnabled);
+            
+            // Disable the actual input elements
+            document.getElementById('barWidth').disabled = isAutoScaleEnabled;
+            document.getElementById('barSpacing').disabled = isAutoScaleEnabled;
+        }
+
         // Initialize controls
         initControls();
+        initCanvas();
+        updateAutoScaleControls();
     </script>
 </body>
 </html>
