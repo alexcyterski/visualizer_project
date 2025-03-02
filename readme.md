@@ -6,9 +6,26 @@ A web-based audio spectrum visualizer that can capture and visualize both system
 
 - Real-time audio spectrum visualization
 - Support for system audio capture (screen audio)
-- Fallback to microphone input
-- Responsive design that adapts to window size
-- Colorful bar graph visualization
+- Microphone input support
+- Full-screen responsive design
+- Multiple visualization types:
+  - Bar graph (with mirrored mode options)
+  - Waveform
+  - Circular
+- Advanced frequency analysis:
+  - Logarithmic, linear, or exponential frequency scaling
+  - Vocal frequency enhancement
+  - Bass reduction and high frequency boost
+  - Frequency separation for clearer visualization
+- Customizable appearance:
+  - Multiple color modes (solid, gradient, rainbow)
+  - Color presets and custom color selection
+  - Adjustable bar width and spacing
+  - Auto-scaling to fill the entire screen
+- Performance options:
+  - Adjustable FFT size (32 to 2048 points)
+  - Smoothing control
+  - Sensitivity adjustment
 
 ## Requirements
 
@@ -39,23 +56,55 @@ A web-based audio spectrum visualizer that can capture and visualize both system
 
 Start the development server:
 
-   ```bash
-   python manage.py runserver
-   ```
- 
+```bash
+python manage.py runserver
+```
+
 Then navigate to `http://localhost:8000` in your browser.
 
 ## Usage
 
-1. Click the "Capture System Audio" button to visualize system audio output
+### Audio Source Selection
+
+1. **Capture System Audio**: Visualize audio from your entire system
    - When prompted, select a screen or window to share
    - Make sure to check "Share audio" in the dialog box
    - Note: System audio capture works best in Chrome and Edge browsers
 
-2. If system audio capture doesn't work, click the "Use Microphone (Fallback)" button
-   - This will use your device's microphone to capture audio instead
+2. **Use Microphone**: Visualize audio from your microphone
+   - This is useful when system audio capture isn't supported or as an alternative input source
 
-3. The visualization will appear as colorful bars that respond to the audio frequencies
+### Visualization Controls
+
+- **Visualization Type**: Choose between bars, waveform, or circular visualizations
+- **Mirrored Mode** (Bars only): Display bars from bottom, top, or mirrored from center
+- **Auto-scale** (Bars only): Automatically scale bars to fill the entire screen width
+
+### Color Settings
+
+- **Color Mode**: Choose between solid color, gradient, or rainbow
+- **Bar Color**: Select a custom color for solid mode
+- **Gradient Colors**: Choose start and end colors for gradient mode
+- **Color Presets**: Quick selection of predefined color schemes
+
+### Animation Settings
+
+- **Sensitivity**: Adjust how responsive the visualization is to audio volume
+- **Smoothing**: Control how quickly the visualization responds to changes
+- **Bar Width**: Adjust the width of individual bars (when auto-scale is disabled)
+- **Bar Spacing**: Control spacing between bars (when auto-scale is disabled)
+
+### Frequency Settings
+
+- **Frequency Scaling**: Choose between logarithmic (natural for human hearing), linear, or exponential scaling
+- **Bass Reduction**: Reduce the dominance of bass frequencies
+- **High Boost**: Enhance higher frequencies
+- **Vocal Enhancement**: Emphasize frequencies in the vocal range
+- **Frequency Separation**: Create more distinction between adjacent frequency bands
+
+### FFT Settings
+
+- **FFT Size**: Adjust the resolution of frequency analysis (higher values provide more detail but may impact performance)
 
 ## Browser Compatibility
 
@@ -68,6 +117,9 @@ Then navigate to `http://localhost:8000` in your browser.
 - **No visualization appears**: Make sure audio is playing on your system
 - **Permission errors**: Ensure you've granted the necessary permissions in your browser
 - **System audio not working**: Make sure to check "Share audio" when prompted
+- **Visualization looks crowded**: Try reducing the FFT size or enabling auto-scale
+- **Bars not filling the screen**: Enable auto-scale in the visualization controls
+- **Specific frequencies not visible**: Adjust frequency scaling, separation, and enhancement controls
 
 ## Technical Details
 
@@ -82,7 +134,8 @@ The visualization works by:
 1. Capturing audio from the selected source (system or microphone)
 2. Processing the audio data through an analyzer node
 3. Extracting frequency data using Fast Fourier Transform (FFT)
-4. Rendering the frequency data as colorful bars on an HTML canvas
+4. Applying various transformations and enhancements to the frequency data
+5. Rendering the processed data as visualizations on an HTML canvas
 
 ## Project Structure
 
