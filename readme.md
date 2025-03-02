@@ -42,7 +42,7 @@ Start the development server:
    ```bash
    python manage.py runserver
    ```
-
+ 
 Then navigate to `http://localhost:8000` in your browser.
 
 ## Usage
