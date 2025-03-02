@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audio Spectrum Visualizer</title>
+    <style>
+        canvas {
+            width: 100%;
+            height: 400px;
+            background: #000;
+        }
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        #startButton, #micButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 20px;
+        }
+        #startButton:hover, #micButton:hover {
+            background-color: #45a049;
+        }
+        #status {
+            margin-top: 10px;
+            color: #333;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <button id="startButton">Capture System Audio</button>
+        <button id="micButton">Use Microphone (Fallback)</button>
+    </div>
+    <div id="status">Click one of the buttons above to start audio visualization</div>
+    <canvas id="visualizer"></canvas>
+
+    <script>
+        // Audio context setup
+        let audioContext;
+        let analyser;
+        let source;
+        const canvas = document.getElementById('visualizer');
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth - 40;
+        let height = canvas.height = 400;
+        const statusElement = document.getElementById('status');
+        
+        // Initialize audio context
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256;
+            }
+        }
+
+        // System audio capture button
+        document.getElementById('startButton').addEventListener('click', async () => {
+            try {
+                initAudio();
+                statusElement.textContent = "Requesting system audio access...";
+                
+                // Try to get display media with audio
+                const stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: true,  // Sometimes video needs to be true for audio to work
+                    audio: true
+                });
+                
+                // Check if we got audio tracks
+                if (stream.getAudioTracks().length === 0) {
+                    statusElement.textContent = "No audio track found. Make sure to check 'Share audio' in the dialog.";
+                    return;
+                }
+                
+                setupVisualization(stream);
+            } catch (error) {
+                statusElement.textContent = "Error: " + error.message;
+                console.error("Setup error:", error);
+            }
+        });
+        
+        // Microphone fallback button
+        document.getElementById('micButton').addEventListener('click', async () => {
+            try {
+                initAudio();
+                statusElement.textContent = "Requesting microphone access...";
+                
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: true
+                });
+                
+                setupVisualization(stream);
+            } catch (error) {
+                statusElement.textContent = "Error accessing microphone: " + error.message;
+                console.error("Microphone error:", error);
+            }
+        });
+        
+        // Setup visualization with the provided stream
+        function setupVisualization(stream) {
+            // Disconnect any existing source
+            if (source) {
+                source.disconnect();
+            }
+            
+            // Create a source node from the stream
+            source = audioContext.createMediaStreamSource(stream);
+            
+            // Connect source to analyzer
+            source.connect(analyser);
+            
+            statusElement.textContent = "Audio connected. Visualizing...";
+            
+            // Start the visualization
+            visualize();
+            
+            // Log audio tracks for debugging
+            console.log("Audio tracks:", stream.getAudioTracks().map(track => ({
+                label: track.label,
+                enabled: track.enabled,
+                muted: track.muted,
+                readyState: track.readyState
+            })));
+        }
+
+        // Visualization function
+        function visualize() {
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            const barWidth = (width / bufferLength) * 2;
+
+            function draw() {
+                requestAnimationFrame(draw);
+                analyser.getByteFrequencyData(dataArray);
+                
+                // Debug: log some values to see if we're getting audio data
+                if (Math.random() < 0.01) { // Only log occasionally
+                    console.log("Audio data sample:", dataArray.slice(0, 5));
+                    
+                    // Check if we're getting any non-zero values
+                    const hasSignal = dataArray.some(value => value > 0);
+                    if (!hasSignal) {
+                        console.log("Warning: No audio signal detected");
+                    }
+                }
+                
+                // Clear canvas
+                ctx.fillStyle = 'rgb(0, 0, 0)';
+                ctx.fillRect(0, 0, width, height);
+
+                // Draw bars
+                let x = 0;
+                for (let i = 0; i < bufferLength; i++) {
+                    const barHeight = dataArray[i] * 2;
+                    const r = barHeight + (25 * (i/bufferLength));
+                    const g = 250 * (i/bufferLength);
+                    const b = 50;
+
+                    ctx.fillStyle = `rgb(${r},${g},${b})`;
+                    ctx.fillRect(x, height - barHeight, barWidth - 1, barHeight);
+                    x += barWidth;
+                }
+            }
+            draw();
+        }
+
+        // Resize canvas when window resizes
+        window.onresize = () => {
+            width = canvas.width = window.innerWidth - 40;
+            height = canvas.height = 400;
+        };
+    </script>
+</body>
+</html>
