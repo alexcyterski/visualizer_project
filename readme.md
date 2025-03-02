@@ -39,9 +39,9 @@ A web-based audio spectrum visualizer that can capture and visualize both system
 
 Start the development server:
 
-bash
-
-python manage.py runserver
+   ```bash
+   python manage.py runserver
+   ```
 
 Then navigate to `http://localhost:8000` in your browser.
 
