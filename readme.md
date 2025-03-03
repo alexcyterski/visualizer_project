@@ -74,6 +74,11 @@ Then navigate to `http://localhost:8000` in your browser.
 2. **Use Microphone**: Visualize audio from your microphone
    - This is useful when system audio capture isn't supported or as an alternative input source
 
+3. **Connect to External Audio**: Visualize audio from external applications like Spotify
+   - Follow the on-screen instructions to properly set up system audio capture
+   - This method captures all system audio, including the external application
+   - Works best with Chrome or Edge browsers
+
 ### Visualization Controls
 
 - **Visualization Type**: Choose between bars, waveform, or circular visualizations
