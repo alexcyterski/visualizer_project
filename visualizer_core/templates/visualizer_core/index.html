@@ -137,6 +137,66 @@
         .control-item.disabled input {
             cursor: not-allowed;
         }
+        
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            .controls {
+                width: 90%;
+                max-width: 350px;
+                right: 5%;
+                left: 5%;
+                margin: 0 auto;
+                top: 10px;
+                max-height: 80vh;
+            }
+            
+            #toggleControls {
+                display: block !important;
+                top: 10px;
+                right: 10px;
+                z-index: 100;
+            }
+            
+            button {
+                padding: 12px 15px;
+                margin-bottom: 15px;
+                width: 100%;
+                font-size: 16px;
+            }
+            
+            .control-group {
+                margin-bottom: 20px;
+            }
+            
+            /* Make range sliders easier to use on mobile */
+            input[type="range"] {
+                height: 30px;
+            }
+            
+            /* Adjust modal for mobile */
+            .modal-content {
+                width: 95%;
+                margin: 5% auto;
+                padding: 15px;
+                max-height: 90vh;
+            }
+            
+            /* iOS-specific fixes */
+            .ios-device button {
+                -webkit-appearance: none;
+                border-radius: 8px;
+            }
+            
+            .ios-device input[type="range"] {
+                -webkit-appearance: none;
+                height: 30px;
+            }
+            
+            /* Hide controls by default on mobile */
+            .mobile-device .controls {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -287,16 +347,6 @@
             </div>
         </div>
         
-        <div class="control-group">
-            <h3>Frequency Scaling</h3>
-            <div class="control-item">
-                <label for="frequencyScale">Frequency Scale:</label>
-                <select id="frequencyScale">
-                    <option value="linear">Linear</option>
-                    <option value="logarithmic">Logarithmic</option>
-                </select>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -335,9 +385,30 @@
         function initControls() {
             // Visualization type
             document.getElementById('visualizationType').addEventListener('change', function() {
-                settings.visualizationType = this.value;
-                updateVisualizationControls();
+                const type = this.value;
+                settings.visualizationType = type;
+                
+                // Show/hide mirrored mode control based on visualization type
+                const mirroredModeControl = document.getElementById('mirroredModeControl');
+                if (type === 'circular') {
+                    mirroredModeControl.classList.add('disabled');
+                } else {
+                    mirroredModeControl.classList.remove('disabled');
+                }
+                
+                // Show/hide auto-scale control based on visualization type
+                const autoScaleControl = document.getElementById('autoScaleControl');
+                if (type === 'bars' || type === 'circular') {
+                    autoScaleControl.style.display = 'block';
+                } else {
+                    autoScaleControl.style.display = 'none';
+                }
+                
+                // Update auto-scale controls visibility
                 updateAutoScaleControls();
+                
+                // Apply the visualization type change
+                visualize();
             });
             
             // Color mode
@@ -397,6 +468,7 @@
             barWidthSlider.addEventListener('input', function() {
                 settings.barWidth = parseFloat(this.value);
                 barWidthValue.textContent = this.value;
+                visualize();
             });
             
             // Bar spacing
@@ -404,7 +476,8 @@
             const barSpacingValue = document.getElementById('barSpacingValue');
             barSpacingSlider.addEventListener('input', function() {
                 settings.barSpacing = parseInt(this.value);
-                barSpacingValue.textContent = this.value;
+                barSpacingValue.textContent = settings.barSpacing;
+                visualize();
             });
             
             // FFT size
@@ -524,14 +597,25 @@
         // Initialize audio context
         function initAudio() {
             if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                analyser = audioContext.createAnalyser();
-                
-                // Set FFT size from settings
-                analyser.fftSize = settings.fftSize;
-                
-                // Set smoothing from settings
-                analyser.smoothingTimeConstant = settings.smoothing;
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    analyser = audioContext.createAnalyser();
+                    analyser.fftSize = 2048;
+                    bufferLength = analyser.frequencyBinCount;
+                    dataArray = new Uint8Array(bufferLength);
+                    
+                    // iOS requires user interaction to start audio context
+                    if (isIOS && audioContext.state === 'suspended') {
+                        document.body.addEventListener('touchstart', function iosTouchStart() {
+                            audioContext.resume().then(() => {
+                                document.body.removeEventListener('touchstart', iosTouchStart);
+                            });
+                        }, false);
+                    }
+                } catch (e) {
+                    console.error('Web Audio API is not supported in this browser', e);
+                    document.getElementById('status').textContent = 'Error: Audio API not supported in your browser.';
+                }
             }
         }
 
@@ -561,29 +645,114 @@
         });
         
         // Microphone fallback button
-        document.getElementById('micButton').addEventListener('click', async () => {
-            try {
-                initAudio();
-                statusElement.textContent = "Requesting microphone access...";
+        document.getElementById('micButton').addEventListener('click', function() {
+            document.getElementById('status').textContent = 'Requesting microphone access...';
+            
+            // For iOS, we need to ensure the audio context is created in response to a user gesture
+            if (isIOS) {
+                // Create audio context if it doesn't exist
+                if (!audioContext) {
+                    try {
+                        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                        // Force resume the audio context
+                        audioContext.resume().then(() => {
+                            console.log('AudioContext started on iOS');
+                        }).catch(err => {
+                            console.error('Failed to start AudioContext on iOS:', err);
+                        });
+                    } catch (e) {
+                        console.error('Failed to create AudioContext on iOS:', e);
+                    }
+                } else if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
                 
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    audio: true
-                });
-                
-                setupVisualization(stream);
-            } catch (error) {
-                statusElement.textContent = "Error accessing microphone: " + error.message;
-                console.error("Microphone error:", error);
+                // Show a more visible permission prompt for iOS
+                document.getElementById('status').innerHTML = '<strong>⚠️ Tap "Allow" when prompted for microphone access</strong>';
             }
+            
+            // Initialize audio context
+            initAudio();
+            
+            // Use simpler constraints for iOS
+            const constraints = isIOS ? {audio: true} : {
+                audio: {
+                    echoCancellation: false,
+                    noiseSuppression: false,
+                    autoGainControl: false
+                }
+            };
+            
+            // Add a slight delay for iOS to ensure the UI updates before permission prompt
+            setTimeout(() => {
+                navigator.mediaDevices.getUserMedia(constraints)
+                    .then(function(stream) {
+                        document.getElementById('status').textContent = 'Microphone connected!';
+                        
+                        // Disconnect any existing source
+                        if (source) {
+                            source.disconnect();
+                        }
+                        
+                        // Connect the microphone to the audio context
+                        source = audioContext.createMediaStreamSource(stream);
+                        source.connect(analyser);
+                        
+                        // Start visualization
+                        visualize();
+                        
+                        // Show the toggle controls button
+                        document.getElementById('toggleControls').style.display = 'block';
+                    })
+                    .catch(function(err) {
+                        console.error('Error accessing microphone:', err);
+                        document.getElementById('status').innerHTML = '<strong>Error: ' + err.message + '</strong>';
+                        
+                        if (isIOS) {
+                            showIOSHelpModal();
+                        }
+                    });
+            }, isIOS ? 500 : 0);
         });
         
         // External audio button - revised to show instructions first
         document.getElementById('externalAudioButton').addEventListener('click', function() {
-            // Update status
-            document.getElementById('status').textContent = 'Preparing to connect to external audio...';
-            
-            // Show instructions modal with a "Start Capture" button
-            showExternalAudioInstructionsWithStartButton();
+            if (isIOS) {
+                // Show iOS-specific message
+                const pages = [
+                    {
+                        title: "iOS External Audio",
+                        content: `
+                            <p>iOS doesn't support direct system audio capture. Instead:</p>
+                            <ol>
+                                <li>Use the microphone option</li>
+                                <li>Place your device near the speakers</li>
+                                <li>Adjust the volume for best results</li>
+                            </ol>
+                            
+                            <div class="action-buttons">
+                                <button id="use-mic-ios" style="background-color: #2196F3; padding: 12px 24px; font-size: 16px;">Use Microphone</button>
+                            </div>
+                        `
+                    }
+                ];
+                
+                const modal = createPaginatedModal("iOS Audio Capture", pages);
+                
+                setTimeout(() => {
+                    const useMicBtn = modal.querySelector('#use-mic-ios');
+                    if (useMicBtn) {
+                        useMicBtn.addEventListener('click', function() {
+                            document.body.removeChild(modal);
+                            document.getElementById('micButton').click();
+                        });
+                    }
+                }, 100);
+            } else {
+                // For non-iOS devices, show the regular external audio instructions
+                document.getElementById('status').textContent = 'Preparing to connect to external audio...';
+                showExternalAudioInstructionsWithStartButton();
+            }
         });
         
         // Updated instructions modal with a start button
@@ -927,7 +1096,7 @@ pavucontrol &
             // Get the appropriate buffer length based on the current FFT size
             const bufferLength = analyser.frequencyBinCount;
             const dataArray = new Uint8Array(bufferLength);
-            
+
             function draw() {
                 requestAnimationFrame(draw);
                 
@@ -1004,7 +1173,11 @@ pavucontrol &
                 }
             } else {
                 // Use the user-defined settings
-                barWidth = (width / visibleBarCount) * settings.barWidth;
+                // Calculate bar width based on the total width and number of bars
+                const totalWidth = fullViewportWidth;
+                // Convert barWidth from 0.1-1 range to a proportion of available space
+                barWidth = (totalWidth / visibleBarCount) * settings.barWidth;
+                // Use the barSpacing setting directly as pixels between bars
                 barSpacing = settings.barSpacing;
             }
             
@@ -1129,7 +1302,7 @@ pavucontrol &
             const sliceWidth = width / bufferLength;
             let x = 0;
             
-            for (let i = 0; i < bufferLength; i++) {
+                for (let i = 0; i < bufferLength; i++) {
                 const v = dataArray[i] / 128.0;
                 const y = v * height / 2;
                 
@@ -1151,23 +1324,52 @@ pavucontrol &
             const centerX = width / 2;
             const centerY = height / 2;
             const radius = Math.min(width, height) / 4;
-            const barCount = bufferLength;
-            const angleStep = (2 * Math.PI) / barCount;
             
-            for (let i = 0; i < barCount; i++) {
-                // Calculate the index based on frequency scaling
+            // Determine how many bars to display based on buffer length
+            let visibleBarCount;
+            
+            if (settings.autoScale) {
+                // For very large FFT sizes, limit the number of bars to keep them visible
+                if (bufferLength > 1024) {
+                    visibleBarCount = 512;
+                } else if (bufferLength > 512) {
+                    visibleBarCount = 256;
+                } else {
+                    visibleBarCount = bufferLength;
+                }
+            } else {
+                visibleBarCount = bufferLength;
+            }
+            
+            // Calculate the angle step based on visible bar count and spacing
+            // Apply spacing by reducing the total angle covered
+            const spacingFactor = 1 - (settings.barSpacing / 10); // Convert 0-5 range to a percentage
+            const totalAngle = 2 * Math.PI * spacingFactor;
+            const angleStep = totalAngle / visibleBarCount;
+            
+            // Calculate the bar width as a percentage of the angle step
+            const barAngleWidth = angleStep * settings.barWidth;
+            
+            // Calculate the step size if we're not showing all bars
+            const step = Math.ceil(bufferLength / visibleBarCount);
+            
+            for (let i = 0; i < visibleBarCount; i++) {
+                // Calculate the actual data index based on step size
+                const dataIndex = Math.min(i * step, bufferLength - 1);
+                
+                // Apply frequency scaling to the index
                 let index;
-                const normalizedI = i / barCount;
+                const normalizedI = i / visibleBarCount;
                 
                 if (settings.frequencyScaling === 'logarithmic') {
                     // Logarithmic scaling (more space for lower frequencies)
-                    index = Math.floor(Math.pow(normalizedI, 0.5) * barCount);
+                    index = Math.floor(Math.pow(normalizedI, 0.5) * bufferLength);
                 } else if (settings.frequencyScaling === 'exponential') {
                     // Exponential scaling (more space for higher frequencies)
-                    index = Math.floor(Math.pow(normalizedI, 2) * barCount);
+                    index = Math.floor(Math.pow(normalizedI, 2) * bufferLength);
                 } else {
                     // Linear scaling (equal space for all frequencies)
-                    index = i;
+                    index = dataIndex;
                 }
                 
                 // Ensure index is within bounds
@@ -1177,18 +1379,18 @@ pavucontrol &
                 let value = dataArray[index];
                 
                 // Apply bass reduction (for lower third of the spectrum)
-                if (i < barCount / 3) {
+                if (i < visibleBarCount / 3) {
                     value = Math.max(0, value - (settings.bassBoost / 100) * 255);
                 }
                 
                 // Apply high boost (for upper third of the spectrum)
-                if (i > (barCount * 2) / 3) {
+                if (i > (visibleBarCount * 2) / 3) {
                     value = Math.min(255, value + (settings.highBoost / 100) * 255);
                 }
                 
                 // Apply vocal enhancement (for mid-range frequencies where vocals typically sit)
-                const vocalRangeStart = Math.floor(barCount * 0.1);
-                const vocalRangeEnd = Math.floor(barCount * 0.3);
+                const vocalRangeStart = Math.floor(visibleBarCount * 0.1);
+                const vocalRangeEnd = Math.floor(visibleBarCount * 0.3);
 
                 if (i >= vocalRangeStart && i <= vocalRangeEnd) {
                     // Enhance the vocal range
@@ -1211,17 +1413,11 @@ pavucontrol &
                 // Calculate angle
                 const angle = i * angleStep;
                 
-                // Calculate start and end points
-                const startX = centerX + Math.cos(angle) * radius;
-                const startY = centerY + Math.sin(angle) * radius;
-                const endX = centerX + Math.cos(angle) * (radius + barHeight);
-                const endY = centerY + Math.sin(angle) * (radius + barHeight);
-                
                 // Set color based on color mode
                 if (settings.colorMode === 'solid') {
                     ctx.strokeStyle = settings.barColor;
                 } else if (settings.colorMode === 'gradient') {
-                    const ratio = i / barCount;
+                    const ratio = i / visibleBarCount;
                     const r1 = parseInt(settings.gradientStart.slice(1, 3), 16);
                     const g1 = parseInt(settings.gradientStart.slice(3, 5), 16);
                     const b1 = parseInt(settings.gradientStart.slice(5, 7), 16);
@@ -1235,16 +1431,45 @@ pavucontrol &
                     
                     ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
                 } else if (settings.colorMode === 'rainbow') {
-                    const hue = (i / barCount * 360) % 360;
+                    const hue = (i / visibleBarCount * 360) % 360;
                     ctx.strokeStyle = `hsl(${hue}, 100%, 50%)`;
                 }
                 
+                // Apply bar width setting to line width
+                ctx.lineWidth = Math.max(1, 5 * settings.barWidth);
+                
                 // Draw line
-                ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.moveTo(startX, startY);
-                ctx.lineTo(endX, endY);
-                ctx.stroke();
+                
+                // Use the bar angle width to draw an arc instead of a line for thicker bars
+                if (settings.barWidth > 0.3) {
+                    const halfBarAngle = barAngleWidth / 2;
+                    const startAngle = angle - halfBarAngle;
+                    const endAngle = angle + halfBarAngle;
+                    
+                    // Draw inner arc
+                    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                    
+                    // Draw outer arc (if there's a value)
+                    if (barHeight > 0) {
+                        ctx.arc(centerX, centerY, radius + barHeight, endAngle, startAngle, true);
+                    }
+                    
+                    // Close the path
+                    ctx.closePath();
+                    ctx.fillStyle = ctx.strokeStyle;
+                    ctx.fill();
+                } else {
+                    // For thin bars, just draw lines
+                    const startX = centerX + Math.cos(angle) * radius;
+                    const startY = centerY + Math.sin(angle) * radius;
+                    const endX = centerX + Math.cos(angle) * (radius + barHeight);
+                    const endY = centerY + Math.sin(angle) * (radius + barHeight);
+                    
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, endY);
+                    ctx.stroke();
+                }
             }
         }
 
@@ -1257,9 +1482,7 @@ pavucontrol &
             height = canvas.height;
             
             // Reset the visualization to ensure proper scaling
-            if (settings.autoScale && settings.visualizationType === 'bars') {
-                resetVisualization();
-            }
+            resetVisualization();
         });
         
         // Ensure the canvas is properly sized on initialization
@@ -1281,17 +1504,37 @@ pavucontrol &
 
         // Add this function to toggle the animation controls based on auto-scale setting
         function updateAutoScaleControls() {
+            const autoScale = document.getElementById('autoScale').checked;
+            const visualizationType = document.getElementById('visualizationType').value;
+            
+            // Bar width control should be available for both bars and circular visualizations
             const barWidthControl = document.getElementById('barWidthControl');
             const barSpacingControl = document.getElementById('barSpacingControl');
-            const isAutoScaleEnabled = document.getElementById('autoScale').checked;
             
-            // Disable or enable the controls based on auto-scale setting
-            barWidthControl.classList.toggle('disabled', isAutoScaleEnabled);
-            barSpacingControl.classList.toggle('disabled', isAutoScaleEnabled);
-            
-            // Disable the actual input elements
-            document.getElementById('barWidth').disabled = isAutoScaleEnabled;
-            document.getElementById('barSpacing').disabled = isAutoScaleEnabled;
+            // Show/hide auto-scale control based on visualization type
+            const autoScaleControl = document.getElementById('autoScaleControl');
+            if (visualizationType === 'bars' || visualizationType === 'circular') {
+                autoScaleControl.style.display = 'block';
+                
+                // Bar width and spacing should only be disabled when auto-scale is on
+                const shouldDisable = autoScale;
+                
+                // Update the bar width control
+                barWidthControl.classList.toggle('disabled', shouldDisable);
+                document.getElementById('barWidth').disabled = shouldDisable;
+                
+                // Update the bar spacing control
+                barSpacingControl.classList.toggle('disabled', shouldDisable);
+                document.getElementById('barSpacing').disabled = shouldDisable;
+            } else {
+                autoScaleControl.style.display = 'none';
+                
+                // For wave visualization, always disable bar controls
+                barWidthControl.classList.add('disabled');
+                document.getElementById('barWidth').disabled = true;
+                barSpacingControl.classList.add('disabled');
+                document.getElementById('barSpacing').disabled = true;
+            }
         }
 
         // Add a function to reset the visualization when needed
@@ -1303,11 +1546,6 @@ pavucontrol &
             
             // If we have an active audio source, restart the visualization
             if (source) {
-                // Disconnect and reconnect to force a refresh
-                source.disconnect();
-                source.connect(analyser);
-                analyser.connect(audioContext.destination);
-                
                 // Update analyzer settings
                 analyser.fftSize = settings.fftSize;
                 analyser.smoothingTimeConstant = settings.smoothing;
@@ -1610,6 +1848,92 @@ pavucontrol &
         // Make the modal object available
         return modal;
     }
+
+    // Add device detection function
+    function detectMobileDevice() {
+        const isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+            document.body.classList.add('mobile-device');
+            document.getElementById('toggleControls').style.display = 'block';
+        }
+        
+        if (isIOS) {
+            document.body.classList.add('ios-device');
+            // Show iOS-specific instructions
+            document.getElementById('status').textContent = 'Tap a button to start. iOS requires microphone access.';
+        }
+        
+        return { isMobile, isIOS };
+    }
+
+    // Call device detection on page load
+    const { isMobile, isIOS } = detectMobileDevice();
+
+    // Add iOS-specific help modal
+    function showIOSHelpModal() {
+        const pages = [
+            {
+                title: "iOS Audio Setup",
+                content: `
+                    <p>On iOS devices, you'll need to:</p>
+                    <ol>
+                        <li>Allow microphone access when prompted</li>
+                        <li>Use the microphone option for best results</li>
+                        <li>Make sure your device is not on silent mode</li>
+                        <li>For external audio, place the microphone near your speakers</li>
+                    </ol>
+                    <p>Note: iOS has limitations on audio capture. The microphone method works best.</p>
+                    
+                    <div class="action-buttons">
+                        <button id="try-mic-again" style="background-color: #4CAF50; padding: 12px 24px; font-size: 16px;">Try Microphone Again</button>
+                    </div>
+                `
+            }
+        ];
+        
+        const modal = createPaginatedModal("iOS Audio Setup", pages);
+        
+        setTimeout(() => {
+            const tryAgainBtn = modal.querySelector('#try-mic-again');
+            if (tryAgainBtn) {
+                tryAgainBtn.addEventListener('click', function() {
+                    document.body.removeChild(modal);
+                    document.getElementById('micButton').click();
+                });
+            }
+        }, 100);
+    }
+
+    // Enhance toggle controls for mobile
+    document.getElementById('toggleControls').addEventListener('click', function() {
+        const controlPanel = document.getElementById('controlPanel');
+        if (controlPanel.style.display === 'none') {
+            controlPanel.style.display = 'block';
+            this.textContent = '×';
+        } else {
+            controlPanel.style.display = 'none';
+            this.textContent = '≡';
+        }
+    });
+
+    // Add touch event handling for visualizations
+    document.getElementById('visualizer').addEventListener('touchstart', function(e) {
+        e.preventDefault(); // Prevent scrolling when touching the canvas
+        
+        // Toggle controls on canvas touch for mobile
+        const controlPanel = document.getElementById('controlPanel');
+        if (isMobile) {
+            if (controlPanel.style.display === 'none') {
+                controlPanel.style.display = 'block';
+                document.getElementById('toggleControls').textContent = '×';
+            } else {
+                controlPanel.style.display = 'none';
+                document.getElementById('toggleControls').textContent = '≡';
+            }
+        }
+    });
 
     // Initialize controls
     initControls();
