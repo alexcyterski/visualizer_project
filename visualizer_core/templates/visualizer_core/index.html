@@ -347,6 +347,124 @@
             </div>
         </div>
         
+        <div class="control-group">
+            <h3>Background Effects</h3>
+            <div class="control-item">
+                <label for="backgroundEffect">Background Type:</label>
+                <select id="backgroundEffect">
+                    <option value="none">None (Black)</option>
+                    <option value="gradient">Color Gradient</option>
+                    <option value="pulse">Pulse</option>
+                    <option value="stars">Starfield</option>
+                    <option value="noise">Noise</option>
+                </select>
+            </div>
+            <div class="control-item" id="backgroundColorControls">
+                <label>Background Colors:</label>
+                <div>
+                    <input type="color" id="bgColorStart" value="#000022">
+                    <span>to</span>
+                    <input type="color" id="bgColorEnd" value="#220022">
+                </div>
+            </div>
+            <div class="control-item" id="backgroundIntensityControl">
+                <label for="backgroundIntensity">Effect Intensity: <span id="backgroundIntensityValue">5</span></label>
+                <input type="range" id="backgroundIntensity" min="1" max="10" value="5">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h3>Particle Effects</h3>
+            <div class="control-item">
+                <label for="particleEffect">Particle Type:</label>
+                <select id="particleEffect">
+                    <option value="none">None</option>
+                    <option value="dots">Floating Dots</option>
+                    <option value="lines">Connecting Lines</option>
+                    <option value="bubbles">Bubbles</option>
+                    <option value="sparkles">Sparkles</option>
+                </select>
+            </div>
+            <div class="control-item">
+                <label for="particleDensity">Particle Density: <span id="particleDensityValue">50</span></label>
+                <input type="range" id="particleDensity" min="10" max="200" value="50">
+            </div>
+            <div class="control-item">
+                <label for="particleSize">Particle Size: <span id="particleSizeValue">3</span></label>
+                <input type="range" id="particleSize" min="1" max="10" value="3">
+            </div>
+            <div class="control-item">
+                <label for="particleSpeed">Particle Speed: <span id="particleSpeedValue">2</span></label>
+                <input type="range" id="particleSpeed" min="1" max="5" value="2">
+            </div>
+            <div class="control-item">
+                <label for="particleColor">Particle Color:</label>
+                <input type="color" id="particleColor" value="#ffffff">
+            </div>
+            <div class="control-item">
+                <label>
+                    <input type="checkbox" id="particleReactToAudio" checked>
+                    React to audio
+                </label>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h3>Beat Detection</h3>
+            <div class="control-item">
+                <label>
+                    <input type="checkbox" id="enableBeatDetection">
+                    Enable beat detection
+                </label>
+            </div>
+            <div class="control-item">
+                <label for="beatSensitivity">Beat Sensitivity: <span id="beatSensitivityValue">1.5</span></label>
+                <input type="range" id="beatSensitivity" min="1.1" max="2.0" step="0.1" value="1.5">
+            </div>
+            <div class="control-item">
+                <label for="beatEffect">On Beat Effect:</label>
+                <select id="beatEffect">
+                    <option value="pulse">Screen Pulse</option>
+                    <option value="flash">Flash</option>
+                    <option value="zoom">Zoom</option>
+                    <option value="shake">Shake</option>
+                    <option value="color">Color Shift</option>
+                </select>
+            </div>
+            <div class="control-item">
+                <label for="beatEffectIntensity">Effect Intensity: <span id="beatEffectIntensityValue">5</span></label>
+                <input type="range" id="beatEffectIntensity" min="1" max="10" value="5">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h3>Presets</h3>
+            <div class="control-item preset-buttons">
+                <button id="presetClassic">Classic</button>
+                <button id="presetNeon">Neon</button>
+                <button id="presetChill">Chill</button>
+                <button id="presetParty">Party</button>
+                <button id="presetSpace">Space</button>
+            </div>
+            <div class="control-item">
+                <button id="savePreset">Save Current Settings</button>
+                <button id="loadPreset">Load Custom Preset</button>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h3>Display Options</h3>
+            <div class="control-item">
+                <button id="fullscreenButton">Toggle Fullscreen</button>
+            </div>
+            <div class="control-item">
+                <label>
+                    <input type="checkbox" id="showFPS">
+                    Show FPS
+                </label>
+            </div>
+        </div>
+        
     </div>
 
     <script>
@@ -378,8 +496,43 @@
             mirroredMode: 'mirrored',
             autoScale: true,
             vocalEnhance: 0,
-            frequencySeparation: 0
+            frequencySeparation: 0,
+            // New settings for added features
+            backgroundEffect: 'none',
+            bgColorStart: '#000022',
+            bgColorEnd: '#220022',
+            backgroundIntensity: 5,
+            particleEffect: 'none',
+            particleDensity: 50,
+            particleSize: 3,
+            particleSpeed: 2,
+            particleColor: '#ffffff',
+            particleReactToAudio: true,
+            enableBeatDetection: false,
+            beatSensitivity: 1.5,
+            beatEffect: 'pulse',
+            beatEffectIntensity: 5,
+            showFPS: false
         };
+        
+        // Beat detection variables
+        let beatDetector = {
+            energyHistory: [],
+            historySize: 43, // About 1 second of history at 60fps
+            beatCutoff: 0,
+            beatCutoffDecay: 0.98,
+            beatMinimum: 0.15,
+            lastBeatTime: 0,
+            debounceTime: 300, // Minimum time between beats in ms
+            isBeat: false
+        };
+        
+        // Particle system
+        let particles = [];
+        
+        // Performance monitoring
+        let lastFrameTime = 0;
+        let fps = 0;
         
         // Initialize UI controls
         function initControls() {
@@ -561,6 +714,187 @@
                 settings.frequencySeparation = parseInt(this.value);
                 frequencySeparationValue.textContent = this.value;
             });
+            
+            // Background effect
+            document.getElementById('backgroundEffect').addEventListener('change', function() {
+                settings.backgroundEffect = this.value;
+                updateBackgroundControls();
+            });
+            
+            // Background colors
+            document.getElementById('bgColorStart').addEventListener('input', function() {
+                settings.bgColorStart = this.value;
+            });
+            
+            document.getElementById('bgColorEnd').addEventListener('input', function() {
+                settings.bgColorEnd = this.value;
+            });
+            
+            // Background intensity
+            const bgIntensitySlider = document.getElementById('backgroundIntensity');
+            const bgIntensityValue = document.getElementById('backgroundIntensityValue');
+            bgIntensitySlider.addEventListener('input', function() {
+                settings.backgroundIntensity = parseInt(this.value);
+                bgIntensityValue.textContent = this.value;
+            });
+            
+            // Particle effect
+            document.getElementById('particleEffect').addEventListener('change', function() {
+                settings.particleEffect = this.value;
+                updateParticleControls();
+                
+                // Initialize particles if needed
+                if (settings.particleEffect !== 'none' && particles.length === 0) {
+                    initParticles();
+                }
+            });
+            
+            // Particle density
+            const particleDensitySlider = document.getElementById('particleDensity');
+            const particleDensityValue = document.getElementById('particleDensityValue');
+            particleDensitySlider.addEventListener('input', function() {
+                settings.particleDensity = parseInt(this.value);
+                particleDensityValue.textContent = this.value;
+                
+                // Reinitialize particles with new density
+                if (settings.particleEffect !== 'none') {
+                    initParticles();
+                }
+            });
+            
+            // Particle size
+            const particleSizeSlider = document.getElementById('particleSize');
+            const particleSizeValue = document.getElementById('particleSizeValue');
+            particleSizeSlider.addEventListener('input', function() {
+                settings.particleSize = parseInt(this.value);
+                particleSizeValue.textContent = this.value;
+            });
+            
+            // Particle speed
+            const particleSpeedSlider = document.getElementById('particleSpeed');
+            const particleSpeedValue = document.getElementById('particleSpeedValue');
+            particleSpeedSlider.addEventListener('input', function() {
+                settings.particleSpeed = parseInt(this.value);
+                particleSpeedValue.textContent = this.value;
+            });
+            
+            // Particle color
+            document.getElementById('particleColor').addEventListener('input', function() {
+                settings.particleColor = this.value;
+            });
+            
+            // Particle react to audio
+            document.getElementById('particleReactToAudio').addEventListener('change', function() {
+                settings.particleReactToAudio = this.checked;
+            });
+            
+            // Beat detection
+            document.getElementById('enableBeatDetection').addEventListener('change', function() {
+                settings.enableBeatDetection = this.checked;
+                
+                // Reset beat detector when enabled
+                if (settings.enableBeatDetection) {
+                    resetBeatDetector();
+                }
+            });
+            
+            // Beat sensitivity
+            const beatSensitivitySlider = document.getElementById('beatSensitivity');
+            const beatSensitivityValue = document.getElementById('beatSensitivityValue');
+            beatSensitivitySlider.addEventListener('input', function() {
+                settings.beatSensitivity = parseFloat(this.value);
+                beatSensitivityValue.textContent = this.value;
+            });
+            
+            // Beat effect
+            document.getElementById('beatEffect').addEventListener('change', function() {
+                settings.beatEffect = this.value;
+            });
+            
+            // Beat effect intensity
+            const beatEffectIntensitySlider = document.getElementById('beatEffectIntensity');
+            const beatEffectIntensityValue = document.getElementById('beatEffectIntensityValue');
+            beatEffectIntensitySlider.addEventListener('input', function() {
+                settings.beatEffectIntensity = parseInt(this.value);
+                beatEffectIntensityValue.textContent = this.value;
+            });
+            
+            // Show FPS
+            document.getElementById('showFPS').addEventListener('change', function() {
+                settings.showFPS = this.checked;
+            });
+            
+            // Fullscreen button
+            document.getElementById('fullscreenButton').addEventListener('click', function() {
+                toggleFullscreen();
+            });
+            
+            // Preset buttons
+            document.getElementById('presetClassic').addEventListener('click', function() {
+                applyPreset('classic');
+            });
+            
+            document.getElementById('presetNeon').addEventListener('click', function() {
+                applyPreset('neon');
+            });
+            
+            document.getElementById('presetChill').addEventListener('click', function() {
+                applyPreset('chill');
+            });
+            
+            document.getElementById('presetParty').addEventListener('click', function() {
+                applyPreset('party');
+            });
+            
+            document.getElementById('presetSpace').addEventListener('click', function() {
+                applyPreset('space');
+            });
+            
+            // Save preset
+            document.getElementById('savePreset').addEventListener('click', function() {
+                saveCurrentSettings();
+            });
+            
+            // Load preset
+            document.getElementById('loadPreset').addEventListener('click', function() {
+                loadCustomPreset();
+            });
+            
+            // Initialize background and particle controls
+            updateBackgroundControls();
+            updateParticleControls();
+        }
+        
+        // Update background controls visibility based on selected effect
+        function updateBackgroundControls() {
+            const backgroundColorControls = document.getElementById('backgroundColorControls');
+            const backgroundIntensityControl = document.getElementById('backgroundIntensityControl');
+            
+            if (settings.backgroundEffect === 'none') {
+                backgroundColorControls.style.display = 'none';
+                backgroundIntensityControl.style.display = 'none';
+            } else if (settings.backgroundEffect === 'gradient') {
+                backgroundColorControls.style.display = 'block';
+                backgroundIntensityControl.style.display = 'none';
+            } else {
+                backgroundColorControls.style.display = 'block';
+                backgroundIntensityControl.style.display = 'block';
+            }
+        }
+        
+        // Update particle controls visibility based on selected effect
+        function updateParticleControls() {
+            const particleControls = document.querySelectorAll('.control-group:nth-of-type(6) .control-item:not(:first-child)');
+            
+            if (settings.particleEffect === 'none') {
+                particleControls.forEach(control => {
+                    control.style.display = 'none';
+                });
+            } else {
+                particleControls.forEach(control => {
+                    control.style.display = 'block';
+                });
+            }
         }
         
         function updateColorControls() {
@@ -1130,6 +1464,9 @@ pavucontrol &
         
         // Draw bar visualization
         function drawBars(dataArray, bufferLength) {
+            // Draw background effects first
+            drawBackgroundEffects(dataArray);
+            
             // Get the full viewport width
             const fullViewportWidth = window.innerWidth;
             
@@ -1292,6 +1629,9 @@ pavucontrol &
         
         // Draw waveform visualization
         function drawWave(dataArray, bufferLength) {
+            // Draw background effects first
+            drawBackgroundEffects(dataArray);
+            
             analyser.getByteTimeDomainData(dataArray);
             
             ctx.lineWidth = 2;
@@ -1321,6 +1661,9 @@ pavucontrol &
         
         // Draw circular visualization
         function drawCircular(dataArray, bufferLength) {
+            // Draw background effects first
+            drawBackgroundEffects(dataArray);
+            
             const centerX = width / 2;
             const centerY = height / 2;
             const radius = Math.min(width, height) / 4;
@@ -1939,6 +2282,619 @@ pavucontrol &
     initControls();
     initCanvas();
     updateAutoScaleControls();
+
+    // Add new function to draw background effects
+    function drawBackgroundEffects(dataArray) {
+        // Skip if background effect is set to none
+        if (settings.backgroundEffect === 'none') {
+            return;
+        }
+        
+        // Calculate average audio level for reactive effects
+        let sum = 0;
+        const sampleSize = Math.min(64, dataArray.length);
+        for (let i = 0; i < sampleSize; i++) {
+            sum += dataArray[i];
+        }
+        const averageLevel = sum / sampleSize / 255;
+        
+        // Apply different background effects based on settings
+        switch(settings.backgroundEffect) {
+            case 'gradient':
+                drawGradientBackground(averageLevel);
+                break;
+            case 'stars':
+                drawStarfieldBackground(averageLevel);
+                break;
+            case 'noise':
+                drawNoiseBackground(averageLevel);
+                break;
+            case 'pulse':
+                drawPulseBackground(averageLevel);
+                break;
+        }
+    }
+
+    // Gradient background effect
+    function drawGradientBackground(audioLevel) {
+        // Create gradient
+        const gradient = ctx.createLinearGradient(0, 0, width, height);
+        
+        // Get colors from settings
+        const startColor = settings.bgColorStart;
+        const endColor = settings.bgColorEnd;
+        
+        // Add color stops
+        gradient.addColorStop(0, startColor);
+        gradient.addColorStop(1, endColor);
+        
+        // Fill background
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+        
+        // Add subtle animation based on time
+        const time = Date.now() / 5000;
+        const noiseScale = 0.01;
+        
+        // Draw some subtle noise patterns that shift over time
+        ctx.globalAlpha = 0.05;
+        ctx.fillStyle = '#ffffff';
+        
+        for (let i = 0; i < 20; i++) {
+            const x = Math.sin(time + i * 0.3) * width / 2 + width / 2;
+            const y = Math.cos(time + i * 0.2) * height / 2 + height / 2;
+            const size = 50 + Math.sin(time + i) * 20;
+            
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Reset alpha
+        ctx.globalAlpha = 1.0;
+    }
+
+    // Starfield background effect
+    function drawStarfieldBackground(audioLevel) {
+        // Initialize stars array if it doesn't exist
+        if (!window.stars) {
+            window.stars = [];
+            const starCount = 200;
+            
+            for (let i = 0; i < starCount; i++) {
+                window.stars.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.random() * 2 + 1,
+                    speed: Math.random() * 2 + 0.5
+                });
+            }
+        }
+        
+        // Fill background with dark color
+        ctx.fillStyle = settings.bgColorStart;
+        ctx.fillRect(0, 0, width, height);
+        
+        // Calculate intensity based on settings and audio level
+        const baseIntensity = settings.backgroundIntensity / 10;
+        const audioReactivity = audioLevel * 2;
+        const intensity = baseIntensity + audioReactivity;
+        
+        // Draw and update stars
+        ctx.fillStyle = '#ffffff';
+        
+        for (let i = 0; i < window.stars.length; i++) {
+            const star = window.stars[i];
+            
+            // Draw star
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, star.size * intensity, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Move star
+            star.x -= star.speed * intensity;
+            
+            // Reset star if it goes off screen
+            if (star.x < 0) {
+                star.x = width;
+                star.y = Math.random() * height;
+            }
+        }
+    }
+
+    // Noise/static background effect
+    function drawNoiseBackground(audioLevel) {
+        // Fill background with base color
+        ctx.fillStyle = settings.bgColorStart;
+        ctx.fillRect(0, 0, width, height);
+        
+        // Calculate intensity based on settings and audio level
+        const baseIntensity = settings.backgroundIntensity / 10;
+        const audioReactivity = audioLevel * 2;
+        const intensity = baseIntensity + audioReactivity;
+        
+        // Create noise pattern
+        const noiseSize = 4; // Size of noise pixels
+        const noiseOpacity = 0.1 * intensity;
+        
+        ctx.fillStyle = settings.bgColorEnd;
+        ctx.globalAlpha = noiseOpacity;
+        
+        for (let x = 0; x < width; x += noiseSize) {
+            for (let y = 0; y < height; y += noiseSize) {
+                if (Math.random() > 0.5) {
+                    ctx.fillRect(x, y, noiseSize, noiseSize);
+                }
+            }
+        }
+        
+        // Reset alpha
+        ctx.globalAlpha = 1.0;
+    }
+
+    // Pulse background effect
+    function drawPulseBackground(audioLevel) {
+        // Calculate pulse size based on audio level
+        const baseIntensity = settings.backgroundIntensity / 10;
+        const pulseSize = audioLevel * baseIntensity * 200;
+        
+        // Create radial gradient for pulse effect
+        const gradient = ctx.createRadialGradient(
+            width / 2, height / 2, 0,
+            width / 2, height / 2, width / 2 + pulseSize
+        );
+        
+        // Add color stops with colors from settings
+        gradient.addColorStop(0, settings.bgColorStart);
+        gradient.addColorStop(1, settings.bgColorEnd);
+        
+        // Fill background
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+        
+        // Add subtle circular waves
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 2;
+        
+        for (let i = 0; i < 5; i++) {
+            const radius = (Date.now() / 1000 + i * 10) % 100 * 5;
+            
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, radius, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+    }
+
+    // Initialize particles for particle effects
+    function initParticles() {
+        particles = [];
+        const count = settings.particleDensity;
+        
+        for (let i = 0; i < count; i++) {
+            particles.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                size: Math.random() * settings.particleSize + 1,
+                speedX: (Math.random() - 0.5) * settings.particleSpeed,
+                speedY: (Math.random() - 0.5) * settings.particleSpeed,
+                // Add properties for different particle effects
+                opacity: Math.random() * 0.5 + 0.5,
+                hue: Math.random() * 360
+            });
+        }
+    }
+
+    // Draw and update particles
+    function updateParticles(dataArray) {
+        if (settings.particleEffect === 'none' || particles.length === 0) {
+            return;
+        }
+        
+        // Calculate average audio level for reactive effects
+        let sum = 0;
+        const sampleSize = Math.min(32, dataArray.length);
+        for (let i = 0; i < sampleSize; i++) {
+            sum += dataArray[i];
+        }
+        const averageLevel = sum / sampleSize / 255;
+        
+        // Apply different particle effects
+        switch(settings.particleEffect) {
+            case 'dots':
+                drawDotParticles(averageLevel);
+                break;
+            case 'lines':
+                drawLineParticles(averageLevel);
+                break;
+            case 'bubbles':
+                drawBubbleParticles(averageLevel);
+                break;
+            case 'sparkles':
+                drawSparkleParticles(averageLevel);
+                break;
+        }
+    }
+
+    // Dot particles effect
+    function drawDotParticles(audioLevel) {
+        // Set particle color from settings
+        ctx.fillStyle = settings.particleColor;
+        
+        // Calculate audio reactivity
+        const reactivity = settings.particleReactToAudio ? audioLevel * 3 : 1;
+        
+        // Draw and update each particle
+        for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            
+            // Draw particle
+            ctx.globalAlpha = p.opacity;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * reactivity, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Update position
+            p.x += p.speedX * (settings.particleReactToAudio ? (1 + audioLevel) : 1);
+            p.y += p.speedY * (settings.particleReactToAudio ? (1 + audioLevel) : 1);
+            
+            // Wrap around screen edges
+            if (p.x < 0) p.x = width;
+            if (p.x > width) p.x = 0;
+            if (p.y < 0) p.y = height;
+            if (p.y > height) p.y = 0;
+        }
+        
+        // Reset alpha
+        ctx.globalAlpha = 1.0;
+    }
+
+    // Line particles effect
+    function drawLineParticles(audioLevel) {
+        // Set line color and width
+        ctx.strokeStyle = settings.particleColor;
+        ctx.lineWidth = 1;
+        
+        // Calculate connection distance based on particle density
+        const connectionDist = width / Math.sqrt(particles.length) * 0.8;
+        
+        // Calculate audio reactivity
+        const reactivity = settings.particleReactToAudio ? audioLevel * 3 : 1;
+        
+        // Update particle positions
+        for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            
+            // Update position
+            p.x += p.speedX * (settings.particleReactToAudio ? (1 + audioLevel) : 1);
+            p.y += p.speedY * (settings.particleReactToAudio ? (1 + audioLevel) : 1);
+            
+            // Wrap around screen edges
+            if (p.x < 0) p.x = width;
+            if (p.x > width) p.x = 0;
+            if (p.y < 0) p.y = height;
+            if (p.y > height) p.y = 0;
+        }
+        
+        // Draw connections between nearby particles
+        for (let i = 0; i < particles.length; i++) {
+            const p1 = particles[i];
+            
+            for (let j = i + 1; j < particles.length; j++) {
+                const p2 = particles[j];
+                
+                // Calculate distance between particles
+                const dx = p1.x - p2.x;
+                const dy = p1.y - p2.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // Draw line if particles are close enough
+                if (distance < connectionDist * reactivity) {
+                    // Set opacity based on distance
+                    const opacity = 1 - (distance / (connectionDist * reactivity));
+                    ctx.globalAlpha = opacity * 0.5;
+                    
+                    // Draw line
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                }
+            }
+        }
+        
+        // Reset alpha
+        ctx.globalAlpha = 1.0;
+    }
+
+    // Bubble particles effect
+    function drawBubbleParticles(audioLevel) {
+        // Calculate audio reactivity
+        const reactivity = settings.particleReactToAudio ? audioLevel * 3 : 1;
+        
+        // Draw and update each particle
+        for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            
+            // Create gradient for bubble
+            const gradient = ctx.createRadialGradient(
+                p.x, p.y, 0,
+                p.x, p.y, p.size * reactivity
+            );
+            
+            // Add color stops
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+            gradient.addColorStop(0.5, settings.particleColor);
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            
+            // Draw bubble
+            ctx.globalAlpha = p.opacity;
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * 2 * reactivity, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Update position
+            p.x += p.speedX * (settings.particleReactToAudio ? (1 + audioLevel) : 1);
+            p.y += p.speedY * (settings.particleReactToAudio ? (1 + audioLevel) : 1);
+            
+            // Wrap around screen edges
+            if (p.x < 0) p.x = width;
+            if (p.x > width) p.x = 0;
+            if (p.y < 0) p.y = height;
+            if (p.y > height) p.y = 0;
+        }
+        
+        // Reset alpha
+        ctx.globalAlpha = 1.0;
+    }
+
+    // Sparkle particles effect
+    function drawSparkleParticles(audioLevel) {
+        // Calculate audio reactivity
+        const reactivity = settings.particleReactToAudio ? audioLevel * 5 : 1;
+        
+        // Draw and update each particle
+        for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            
+            // Pulsate size based on time
+            const time = Date.now() / 1000;
+            const pulsate = Math.sin(time * 5 + i) * 0.5 + 0.5;
+            const size = p.size * (1 + pulsate * reactivity);
+            
+            // Set color based on settings or use rainbow effect
+            if (settings.particleColor === '#ffffff') {
+                // Use rainbow colors if white is selected
+                ctx.fillStyle = `hsl(${(p.hue + time * 50) % 360}, 100%, 70%)`;
+            } else {
+                ctx.fillStyle = settings.particleColor;
+            }
+            
+            // Draw sparkle (star shape)
+            ctx.globalAlpha = p.opacity * (0.5 + pulsate * 0.5);
+            ctx.beginPath();
+            
+            // Draw star shape
+            for (let j = 0; j < 5; j++) {
+                const angle = j * Math.PI * 2 / 5 - Math.PI / 2;
+                const outerRadius = size;
+                const innerRadius = size * 0.4;
+                
+                // Outer point
+                const outerX = p.x + Math.cos(angle) * outerRadius;
+                const outerY = p.y + Math.sin(angle) * outerRadius;
+                
+                // Inner point
+                const innerAngle = angle + Math.PI / 5;
+                const innerX = p.x + Math.cos(innerAngle) * innerRadius;
+                const innerY = p.y + Math.sin(innerAngle) * innerRadius;
+                
+                if (j === 0) {
+                    ctx.moveTo(outerX, outerY);
+                } else {
+                    ctx.lineTo(outerX, outerY);
+                }
+                
+                ctx.lineTo(innerX, innerY);
+            }
+            
+            ctx.closePath();
+            ctx.fill();
+            
+            // Update position with slight drift
+            p.x += p.speedX * 0.5;
+            p.y += p.speedY * 0.5;
+            
+            // Add some random movement
+            p.x += (Math.random() - 0.5) * reactivity;
+            p.y += (Math.random() - 0.5) * reactivity;
+            
+            // Wrap around screen edges
+            if (p.x < 0) p.x = width;
+            if (p.x > width) p.x = 0;
+            if (p.y < 0) p.y = height;
+            if (p.y > height) p.y = 0;
+        }
+        
+        // Reset alpha
+        ctx.globalAlpha = 1.0;
+    }
+
+    // Add beat detection function
+    function detectBeat(dataArray) {
+        if (!settings.enableBeatDetection) {
+            return false;
+        }
+        
+        // Calculate energy (focus on bass frequencies)
+        let energy = 0;
+        const bassRange = 10; // Number of low frequency bins to check
+        
+        for (let i = 0; i < bassRange; i++) {
+            energy += dataArray[i] * dataArray[i];
+        }
+        energy = energy / bassRange;
+        
+        // Add to history
+        beatDetector.energyHistory.unshift(energy);
+        
+        // Keep history at fixed size
+        if (beatDetector.energyHistory.length > beatDetector.historySize) {
+            beatDetector.energyHistory.pop();
+        }
+        
+        // Calculate average energy
+        let sum = 0;
+        for (let i = 0; i < beatDetector.energyHistory.length; i++) {
+            sum += beatDetector.energyHistory[i];
+        }
+        const avgEnergy = sum / beatDetector.energyHistory.length;
+        
+        // Update beat cutoff
+        beatDetector.beatCutoff = beatDetector.beatCutoff * beatDetector.beatCutoffDecay + 
+                                 (1 - beatDetector.beatCutoffDecay) * avgEnergy * settings.beatSensitivity;
+        
+        // Check if we have a beat
+        if (energy > beatDetector.beatCutoff && energy > beatDetector.beatMinimum) {
+            // Check debounce time
+            const now = Date.now();
+            if (now - beatDetector.lastBeatTime > beatDetector.debounceTime) {
+                beatDetector.lastBeatTime = now;
+                beatDetector.isBeat = true;
+                return true;
+            }
+        }
+        
+        beatDetector.isBeat = false;
+        return false;
+    }
+
+    // Apply beat effects
+    function applyBeatEffects(isBeat) {
+        if (!settings.enableBeatDetection || !isBeat) {
+            return;
+        }
+        
+        // Apply different effects based on settings
+        switch(settings.beatEffect) {
+            case 'pulse':
+                // Create a flash effect that fades out
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                ctx.fillRect(0, 0, width, height);
+                break;
+                
+            case 'flash':
+                // Create a more intense flash
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.fillRect(0, 0, width, height);
+                break;
+                
+            case 'zoom':
+                // Apply a zoom effect (handled in the visualization loop)
+                // This is just a placeholder as the actual effect would require
+                // transforming the canvas which is complex to implement here
+                break;
+                
+            case 'shake':
+                // Apply a shake effect by moving the canvas slightly
+                const intensity = settings.beatEffectIntensity / 2;
+                const offsetX = (Math.random() - 0.5) * intensity;
+                const offsetY = (Math.random() - 0.5) * intensity;
+                
+                ctx.translate(offsetX, offsetY);
+                setTimeout(() => {
+                    ctx.translate(-offsetX, -offsetY);
+                }, 50);
+                break;
+                
+            case 'color':
+                // Apply a color shift effect
+                const hue = (Date.now() / 100) % 360;
+                ctx.fillStyle = `hsla(${hue}, 100%, 50%, 0.2)`;
+                ctx.fillRect(0, 0, width, height);
+                break;
+        }
+    }
+
+    // Reset beat detector
+    function resetBeatDetector() {
+        beatDetector = {
+            energyHistory: [],
+            historySize: 43, // About 1 second of history at 60fps
+            beatCutoff: 0,
+            beatCutoffDecay: 0.98,
+            beatMinimum: 0.15,
+            lastBeatTime: 0,
+            debounceTime: 300, // Minimum time between beats in ms
+            isBeat: false
+        };
+    }
+
+    // Update the visualization function to include new effects
+    function visualize() {
+        // Get the appropriate buffer length based on the current FFT size
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        
+        // For FPS calculation
+        let frameCount = 0;
+        let lastFpsUpdateTime = Date.now();
+
+        function draw() {
+            requestAnimationFrame(draw);
+            
+            // Get frequency data
+            analyser.getByteFrequencyData(dataArray);
+            
+            // Clear the canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Detect beat
+            const isBeat = detectBeat(dataArray);
+            
+            // Choose visualization type
+            switch(settings.visualizationType) {
+                case 'bars':
+                    drawBars(dataArray, bufferLength);
+                    break;
+                case 'wave':
+                    drawWave(dataArray, bufferLength);
+                    break;
+                case 'circular':
+                    drawCircular(dataArray, bufferLength);
+                    break;
+                default:
+                    drawBars(dataArray, bufferLength);
+            }
+            
+            // Update and draw particles
+            updateParticles(dataArray);
+            
+            // Apply beat effects
+            applyBeatEffects(isBeat);
+            
+            // Calculate and display FPS if enabled
+            if (settings.showFPS) {
+                frameCount++;
+                
+                const now = Date.now();
+                const elapsed = now - lastFpsUpdateTime;
+                
+                if (elapsed >= 1000) {
+                    fps = Math.round((frameCount * 1000) / elapsed);
+                    frameCount = 0;
+                    lastFpsUpdateTime = now;
+                }
+                
+                // Display FPS
+                ctx.fillStyle = 'white';
+                ctx.font = '12px Arial';
+                ctx.fillText(`FPS: ${fps}`, 10, 20);
+            }
+        }
+        
+        draw();
+    }
     </script>
 </body>
 </html>
