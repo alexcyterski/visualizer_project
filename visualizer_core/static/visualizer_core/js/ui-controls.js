@@ -7,7 +7,7 @@ function initControls() {
         
         // Show/hide mirrored mode control based on visualization type
         const mirroredModeControl = document.getElementById('mirroredModeControl');
-        if (type === 'circular') {
+        if (type === 'circular' || type === 'wave') {
             mirroredModeControl.classList.add('disabled');
         } else {
             mirroredModeControl.classList.remove('disabled');
@@ -15,7 +15,7 @@ function initControls() {
         
         // Show/hide auto-scale control based on visualization type
         const autoScaleControl = document.getElementById('autoScaleControl');
-        if (type === 'bars' || type === 'circular') {
+        if (type === 'bars') {
             autoScaleControl.style.display = 'block';
         } else {
             autoScaleControl.style.display = 'none';
@@ -184,6 +184,16 @@ function initControls() {
         settings.frequencySeparation = parseInt(this.value);
         frequencySeparationValue.textContent = this.value;
     });
+
+    // Background color
+    document.getElementById('backgroundColor').addEventListener('input', function() {
+        settings.backgroundColor = this.value;
+    });
+
+    // Initialize particle system controls if available
+    if (typeof particleSystem !== 'undefined') {
+        initParticleControls();
+    }
 }
 
 // Update color controls based on selected mode
@@ -230,7 +240,7 @@ function updateAutoScaleControls() {
     
     // Show/hide auto-scale control based on visualization type
     const autoScaleControl = document.getElementById('autoScaleControl');
-    if (visualizationType === 'bars' || visualizationType === 'circular') {
+    if (visualizationType === 'bars') {
         autoScaleControl.style.display = 'block';
         
         // Bar width and spacing should only be disabled when auto-scale is on
@@ -243,6 +253,14 @@ function updateAutoScaleControls() {
         // Update the bar spacing control
         barSpacingControl.classList.toggle('disabled', shouldDisable);
         document.getElementById('barSpacing').disabled = shouldDisable;
+    } else if (visualizationType === 'circular') {
+        autoScaleControl.style.display = 'none';
+        
+        // For circular visualization, always enable bar controls
+        barWidthControl.classList.remove('disabled');
+        document.getElementById('barWidth').disabled = false;
+        barSpacingControl.classList.remove('disabled');
+        document.getElementById('barSpacing').disabled = false;
     } else {
         autoScaleControl.style.display = 'none';
         
@@ -252,6 +270,101 @@ function updateAutoScaleControls() {
         barSpacingControl.classList.add('disabled');
         document.getElementById('barSpacing').disabled = true;
     }
+}
+
+// Initialize particle system controls
+function initParticleControls() {
+    // Toggle particles
+    document.getElementById('particlesEnabled').addEventListener('change', function() {
+        if (particleSystem) {
+            particleSystem.settings.enabled = this.checked;
+        }
+    });
+    
+    // Particle type
+    document.getElementById('particleType').addEventListener('change', function() {
+        if (particleSystem) {
+            particleSystem.setType(this.value);
+        }
+    });
+    
+    // Particle count
+    const particleCountSlider = document.getElementById('particleCount');
+    const particleCountValue = document.getElementById('particleCountValue');
+    particleCountSlider.addEventListener('input', function() {
+        if (particleSystem) {
+            const count = parseInt(this.value);
+            particleCountValue.textContent = count;
+            particleSystem.setCount(count);
+        }
+    });
+    
+    // Particle size
+    const particleSizeSlider = document.getElementById('particleSize');
+    const particleSizeValue = document.getElementById('particleSizeValue');
+    particleSizeSlider.addEventListener('input', function() {
+        if (particleSystem) {
+            particleSystem.settings.size = parseFloat(this.value);
+            particleSizeValue.textContent = this.value;
+            // Update size for all existing particles
+            particleSystem.particles.forEach(particle => {
+                particle.baseSize = Math.random() * particleSystem.settings.size + 1;
+                particle.size = particle.baseSize;
+            });
+        }
+    });
+    
+    // Particle speed
+    const particleSpeedSlider = document.getElementById('particleSpeed');
+    const particleSpeedValue = document.getElementById('particleSpeedValue');
+    particleSpeedSlider.addEventListener('input', function() {
+        if (particleSystem) {
+            particleSystem.settings.speed = parseFloat(this.value);
+            particleSpeedValue.textContent = this.value;
+            // Update speed for all existing particles
+            particleSystem.particles.forEach(particle => {
+                particle.vx = (Math.random() - 0.5) * particleSystem.settings.speed;
+                particle.vy = (Math.random() - 0.5) * particleSystem.settings.speed;
+            });
+        }
+    });
+    
+    // Particle reactivity
+    const particleReactivitySlider = document.getElementById('particleReactivity');
+    const particleReactivityValue = document.getElementById('particleReactivityValue');
+    particleReactivitySlider.addEventListener('input', function() {
+        if (particleSystem) {
+            particleSystem.settings.reactivity = parseFloat(this.value);
+            particleReactivityValue.textContent = this.value;
+        }
+    });
+    
+    // Particle color
+    document.getElementById('particleColor').addEventListener('input', function() {
+        if (particleSystem) {
+            particleSystem.setColor(this.value);
+        }
+    });
+    
+    // Color sync
+    document.getElementById('particleColorSync').addEventListener('change', function() {
+        if (particleSystem) {
+            particleSystem.settings.colorSync = this.checked;
+            
+            // If turning off color sync, set particles back to the color picker value
+            if (!this.checked) {
+                const colorPicker = document.getElementById('particleColor');
+                particleSystem.setColor(colorPicker.value);
+            }
+        }
+    });
+    
+    // Connect lines
+    document.getElementById('connectLines').addEventListener('change', function() {
+        if (particleSystem) {
+            particleSystem.settings.connectLines = this.checked;
+        }
+    });
 }
 
 // Wrap initialization in DOMContentLoaded

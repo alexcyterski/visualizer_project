@@ -81,6 +81,11 @@
                     <span class="color-preset" style="background: linear-gradient(to right, #ffff00, #00ffff);" data-start="#ffff00" data-end="#00ffff"></span>
                 </div>
             </div>
+            
+            <div class="control-item">
+                <label for="backgroundColor">Background Color:</label>
+                <input type="color" id="backgroundColor" value="#000000">
+            </div>
         </div>
         
         <div class="control-group">
@@ -153,6 +158,64 @@
                 </select>
             </div>
         </div>
+        
+        <div class="control-group">
+            <h3>Particle Effects</h3>
+            <div class="control-item">
+                <label>
+                    <input type="checkbox" id="particlesEnabled" checked>
+                    Enable Particle Effects
+                </label>
+            </div>
+            
+            <div class="control-item">
+                <label for="particleType">Particle Type:</label>
+                <select id="particleType">
+                    <option value="particles">Particles</option>
+                    <option value="bubbles">Bubbles</option>
+                    <option value="mixed">Mixed</option>
+                </select>
+            </div>
+            
+            <div class="control-item">
+                <label for="particleCount">Particle Count: <span id="particleCountValue">100</span></label>
+                <input type="range" id="particleCount" min="10" max="300" value="100">
+            </div>
+            
+            <div class="control-item">
+                <label for="particleSize">Particle Size: <span id="particleSizeValue">3</span></label>
+                <input type="range" id="particleSize" min="1" max="10" step="0.5" value="3">
+            </div>
+            
+            <div class="control-item">
+                <label for="particleSpeed">Particle Speed: <span id="particleSpeedValue">1</span></label>
+                <input type="range" id="particleSpeed" min="0.1" max="5" step="0.1" value="1">
+            </div>
+            
+            <div class="control-item">
+                <label for="particleReactivity">Audio Reactivity: <span id="particleReactivityValue">5</span></label>
+                <input type="range" id="particleReactivity" min="0" max="10" step="0.5" value="5">
+            </div>
+            
+            <div class="control-item">
+                <label for="particleColor">Particle Color:</label>
+                <input type="color" id="particleColor" value="#ffffff">
+            </div>
+            
+            <div class="control-item">
+                <label>
+                    <input type="checkbox" id="particleColorSync" checked>
+                    Sync with Visualizer Colors
+                </label>
+            </div>
+            
+            <div class="control-item">
+                <label>
+                    <input type="checkbox" id="connectLines">
+                    Connect Particles with Lines
+                </label>
+            </div>
+        </div>
     </div>
 
     <!-- Load JavaScript files in the correct order -->
@@ -160,6 +223,7 @@
     <script src="{% static 'visualizer_core/js/visualizer.js' %}"></script>
     <script src="{% static 'visualizer_core/js/modal-system.js' %}"></script>
     <script src="{% static 'visualizer_core/js/audio-processor.js' %}"></script>
+    <script src="{% static 'visualizer_core/js/particle-system.js' %}"></script>
     <script src="{% static 'visualizer_core/js/ui-controls.js' %}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {

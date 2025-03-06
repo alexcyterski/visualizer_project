@@ -27,7 +27,8 @@ const settings = {
     mirroredMode: 'mirrored',
     autoScale: true,
     vocalEnhance: 0,
-    frequencySeparation: 0
+    frequencySeparation: 0,
+    backgroundColor: '#000000'
 };
 
 // Initialize everything when DOM content is loaded
@@ -42,6 +43,11 @@ document.addEventListener('DOMContentLoaded', function() {
     initCanvas();
     initControls();
     updateAutoScaleControls();
+    
+    // Initialize particle system
+    if (typeof initParticleSystem === 'function') {
+        window.particleSystem = initParticleSystem(canvas, ctx);
+    }
     
     // Add resize listener
     window.addEventListener('resize', handleResize);

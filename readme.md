@@ -21,7 +21,14 @@ A web-based audio spectrum visualizer that can capture and visualize both system
   - Multiple color modes (solid, gradient, rainbow)
   - Color presets and custom color selection
   - Adjustable bar width and spacing
+  - Customizable background color
   - Auto-scaling to fill the entire screen
+- Interactive particle effects:
+  - Multiple particle types (particles, bubbles, mixed)
+  - Audio-reactive particles that respond to sound
+  - Adjustable particle count, size, speed, and reactivity
+  - Particle color synchronization with visualization
+  - Connecting lines between nearby particles
 - Performance options:
   - Adjustable FFT size (32 to 2048 points)
   - Smoothing control
@@ -91,6 +98,7 @@ Then navigate to `http://localhost:8000` in your browser.
 - **Bar Color**: Select a custom color for solid mode
 - **Gradient Colors**: Choose start and end colors for gradient mode
 - **Color Presets**: Quick selection of predefined color schemes
+- **Background Color**: Customize the canvas background color
 
 ### Animation Settings
 
@@ -111,6 +119,18 @@ Then navigate to `http://localhost:8000` in your browser.
 
 - **FFT Size**: Adjust the resolution of frequency analysis (higher values provide more detail but may impact performance)
 
+### Particle Effects
+
+- **Enable Particle Effects**: Toggle particle effects on/off
+- **Particle Type**: Choose between particles, bubbles, or mixed
+- **Particle Count**: Adjust the number of particles displayed
+- **Particle Size**: Control the size of particles
+- **Particle Speed**: Adjust how quickly particles move
+- **Audio Reactivity**: Control how particles respond to audio
+- **Particle Color**: Set a custom color for particles
+- **Sync with Visualizer Colors**: Automatically match particle colors with visualization
+- **Connect Particles with Lines**: Draw lines between nearby particles
+
 ## Browser Compatibility
 
 - **Chrome/Edge**: Full support for both system audio and microphone capture
@@ -125,6 +145,8 @@ Then navigate to `http://localhost:8000` in your browser.
 - **Visualization looks crowded**: Try reducing the FFT size or enabling auto-scale
 - **Bars not filling the screen**: Enable auto-scale in the visualization controls
 - **Specific frequencies not visible**: Adjust frequency scaling, separation, and enhancement controls
+- **Particles not reacting to audio**: Increase the audio reactivity setting
+- **Particles flashing too much**: Reduce the audio reactivity setting to below 2
 
 ## Technical Details
 
@@ -141,6 +163,7 @@ The visualization works by:
 3. Extracting frequency data using Fast Fourier Transform (FFT)
 4. Applying various transformations and enhancements to the frequency data
 5. Rendering the processed data as visualizations on an HTML canvas
+6. Animating particles that react to the audio data
 
 ## Project Structure
 
@@ -154,6 +177,7 @@ The visualization works by:
       - `visualizer.js` - Visualization rendering logic
       - `ui-controls.js` - User interface controls and interactions
       - `modal-system.js` - Modal dialog system for instructions and troubleshooting
+      - `particle-system.js` - Interactive particle effects that react to audio
   - `templates/` - HTML templates for the web interface
     - `visualizer_core/index.html` - Main template that includes all necessary scripts
   - `views.py` - Django views that render the templates
@@ -188,6 +212,11 @@ The JavaScript code has been refactored into separate modules for better maintai
    - Creates reusable modal dialogs
    - Provides help and setup instructions
    - Handles OS-specific guidance
+
+6. **particle-system.js**: Implements interactive particle effects
+   - Creates and manages particles that react to audio
+   - Provides different particle types and behaviors
+   - Synchronizes with visualization colors and audio levels
 
 ## License
 

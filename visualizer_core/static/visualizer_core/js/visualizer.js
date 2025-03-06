@@ -16,7 +16,7 @@ function visualize() {
         // Clear the ENTIRE canvas/viewport each frame
         // This ensures no leftover bars from previous frames
         ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-        ctx.fillStyle = 'rgb(0, 0, 0)';
+        ctx.fillStyle = settings.backgroundColor;
         ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
         
         // Choose visualization type
@@ -32,6 +32,23 @@ function visualize() {
                 break;
             default:
                 drawBars(dataArray, bufferLength);
+        }
+        
+        // Update and draw particle system if it exists
+        if (window.particleSystem) {
+            window.particleSystem.update(dataArray);
+            
+            // Sync particle colors with visualizer if enabled
+            if (window.particleSystem.settings.colorSync) {
+                window.particleSystem.syncWithVisualizerColors(
+                    settings.colorMode, 
+                    settings.barColor, 
+                    settings.gradientStart, 
+                    settings.gradientEnd
+                );
+            }
+            
+            window.particleSystem.draw();
         }
     }
     
