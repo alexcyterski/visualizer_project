@@ -346,4 +346,47 @@ button:hover {
     .mobile-device .controls {
         display: none;
     }
+}
+
+#fullscreenButton {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+}
+
+#fullscreenButton:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.fullscreen-icon {
+    display: inline-block;
+    transform: rotate(45deg);
+}
+
+/* When in fullscreen mode */
+.fullscreen-mode #controlPanel,
+.fullscreen-mode #status,
+.fullscreen-mode #toggleControls {
+    display: none !important;
+}
+
+.fullscreen-mode #fullscreenButton {
+    opacity: 0.3;
+}
+
+.fullscreen-mode #fullscreenButton:hover {
+    opacity: 1;
 } 

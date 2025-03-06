@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
     detectMobileDevice();
     initCanvas();
     initControls();
+    initFullscreenButton();
     updateAutoScaleControls();
     
     // Initialize particle system
@@ -169,4 +170,53 @@ function testVisualizerComponents() {
 }
 
 // Expose the test function globally
-window.testVisualizerComponents = testVisualizerComponents; 
+window.testVisualizerComponents = testVisualizerComponents;
+
+// Initialize fullscreen button
+function initFullscreenButton() {
+    const fullscreenButton = document.getElementById('fullscreenButton');
+    const body = document.body;
+    
+    fullscreenButton.addEventListener('click', function() {
+        body.classList.toggle('fullscreen-mode');
+        
+        // If we're entering fullscreen mode, try to request actual fullscreen
+        if (body.classList.contains('fullscreen-mode')) {
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen();
+            } else if (document.documentElement.webkitRequestFullscreen) {
+                document.documentElement.webkitRequestFullscreen();
+            } else if (document.documentElement.msRequestFullscreen) {
+                document.documentElement.msRequestFullscreen();
+            }
+        } else {
+            // Exit fullscreen if we're in it
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+    });
+    
+    // Listen for fullscreen change events
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+}
+
+// Handle fullscreen change events
+function handleFullscreenChange() {
+    const body = document.body;
+    
+    // If we exited fullscreen but still have the fullscreen-mode class, remove it
+    if (!document.fullscreenElement && 
+        !document.webkitFullscreenElement && 
+        !document.mozFullScreenElement && 
+        !document.msFullscreenElement) {
+        body.classList.remove('fullscreen-mode');
+    }
+} 
