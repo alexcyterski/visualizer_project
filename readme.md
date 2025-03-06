@@ -33,6 +33,8 @@ A web-based audio spectrum visualizer that can capture and visualize both system
   - Adjustable FFT size (32 to 2048 points)
   - Smoothing control
   - Sensitivity adjustment
+  - Automatic performance optimization
+- Fullscreen mode for distraction-free visualization
 
 ## Requirements
 
@@ -91,6 +93,7 @@ Then navigate to `http://localhost:8000` in your browser.
 - **Visualization Type**: Choose between bars, waveform, or circular visualizations
 - **Mirrored Mode** (Bars only): Display bars from bottom, top, or mirrored from center
 - **Auto-scale** (Bars only): Automatically scale bars to fill the entire screen width
+- **Fullscreen Mode**: Toggle fullscreen for distraction-free visualization
 
 ### Color Settings
 
@@ -131,6 +134,19 @@ Then navigate to `http://localhost:8000` in your browser.
 - **Sync with Visualizer Colors**: Automatically match particle colors with visualization
 - **Connect Particles with Lines**: Draw lines between nearby particles
 
+## Performance Optimizations
+
+The visualizer includes several automatic performance optimizations:
+
+- **Frame-rate independent animation**: Ensures smooth motion regardless of device performance
+- **Adaptive particle count**: Automatically reduces particle count if frame rate drops below 30 FPS
+- **Spatial partitioning**: Efficiently calculates particle connections using grid-based neighbor finding
+- **Optimized canvas operations**: Uses efficient drawing techniques to minimize rendering overhead
+- **Debounced resize handling**: Prevents performance spikes during window resizing
+- **Optimized audio sampling**: Samples fewer data points for large FFT sizes
+
+These optimizations ensure the visualizer runs smoothly on a wide range of devices, from high-end desktops to mobile phones.
+
 ## Browser Compatibility
 
 - **Chrome/Edge**: Full support for both system audio and microphone capture
@@ -147,6 +163,8 @@ Then navigate to `http://localhost:8000` in your browser.
 - **Specific frequencies not visible**: Adjust frequency scaling, separation, and enhancement controls
 - **Particles not reacting to audio**: Increase the audio reactivity setting
 - **Particles flashing too much**: Reduce the audio reactivity setting to below 2
+- **Performance issues**: Try reducing particle count or disabling connecting lines
+- **Stuttering animation**: Switch to a simpler visualization type or reduce FFT size
 
 ## Technical Details
 
@@ -164,6 +182,7 @@ The visualization works by:
 4. Applying various transformations and enhancements to the frequency data
 5. Rendering the processed data as visualizations on an HTML canvas
 6. Animating particles that react to the audio data
+7. Optimizing performance based on device capabilities
 
 ## Project Structure
 
@@ -192,6 +211,7 @@ The JavaScript code has been refactored into separate modules for better maintai
    - Manages canvas setup and initialization
    - Handles device detection and responsive behavior
    - Defines global settings used across the application
+   - Implements fullscreen mode functionality
 
 2. **audio-processor.js**: Handles audio capture and processing
    - Initializes Web Audio API
@@ -202,6 +222,7 @@ The JavaScript code has been refactored into separate modules for better maintai
    - Contains the main visualization loop
    - Implements different visualization types (bars, wave, circular)
    - Handles drawing and animation
+   - Monitors performance and applies optimizations
 
 4. **ui-controls.js**: Manages user interface
    - Sets up event listeners for UI controls
@@ -217,6 +238,7 @@ The JavaScript code has been refactored into separate modules for better maintai
    - Creates and manages particles that react to audio
    - Provides different particle types and behaviors
    - Synchronizes with visualization colors and audio levels
+   - Uses spatial partitioning for efficient particle interactions
 
 ## License
 

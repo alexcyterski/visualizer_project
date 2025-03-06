@@ -1,21 +1,55 @@
 // At the beginning of the file, ensure visualize is defined in the global scope
 window.visualize = visualize;
 
-// Main visualization function
+// Main visualization function with performance optimizations
 function visualize() {
     // Get the appropriate buffer length based on the current FFT size
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
-
+    
+    // For FPS monitoring
+    let frameCount = 0;
+    let lastFpsUpdateTime = performance.now();
+    let fps = 0;
+    
+    // Use requestAnimationFrame for optimal timing
     function draw() {
-        requestAnimationFrame(draw);
+        const animationId = requestAnimationFrame(draw);
+        
+        // Calculate FPS
+        frameCount++;
+        const now = performance.now();
+        const elapsed = now - lastFpsUpdateTime;
+        
+        if (elapsed >= 1000) {
+            fps = Math.round((frameCount * 1000) / elapsed);
+            frameCount = 0;
+            lastFpsUpdateTime = now;
+            
+            // If FPS drops below threshold, reduce particle count
+            if (fps < 30 && window.particleSystem && window.particleSystem.particles.length > 50) {
+                const newCount = Math.max(50, Math.floor(window.particleSystem.particles.length * 0.8));
+                window.particleSystem.setCount(newCount);
+                
+                // Update UI slider if it exists
+                const particleCountSlider = document.getElementById('particleCount');
+                if (particleCountSlider) {
+                    particleCountSlider.value = newCount;
+                    const particleCountValue = document.getElementById('particleCountValue');
+                    if (particleCountValue) {
+                        particleCountValue.textContent = newCount;
+                    }
+                }
+            }
+        }
         
         // Get frequency data
         analyser.getByteFrequencyData(dataArray);
         
-        // Clear the ENTIRE canvas/viewport each frame
-        // This ensures no leftover bars from previous frames
+        // Clear the canvas - use clearRect for better performance
         ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        
+        // Always fill the background with the selected color
         ctx.fillStyle = settings.backgroundColor;
         ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
         

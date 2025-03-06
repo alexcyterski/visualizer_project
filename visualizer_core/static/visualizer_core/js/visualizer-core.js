@@ -76,33 +76,37 @@ function detectMobileDevice() {
     return { isMobile, isIOS };
 }
 
-// Initialize canvas
+// Initialize canvas with performance optimizations
 function initCanvas() {
-    // Set canvas dimensions to match the viewport exactly
+    // Set canvas to full window size
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     width = canvas.width;
     height = canvas.height;
     
-    // Force the canvas to take up the full viewport
-    canvas.style.width = '100vw';
-    canvas.style.height = '100vh';
-    canvas.style.position = 'absolute';
-    canvas.style.top = '0';
-    canvas.style.left = '0';
-    canvas.style.zIndex = '1';
+    // Optimize canvas context
+    ctx.imageSmoothingEnabled = false; // Disable anti-aliasing for better performance
+    
+    // Initial canvas clear
+    ctx.fillStyle = 'rgb(0, 0, 0)';
+    ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
 }
 
-// Handle window resize
+// Handle window resize with debouncing
+let resizeTimeout;
 function handleResize() {
-    // Update canvas dimensions
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    width = canvas.width;
-    height = canvas.height;
-    
-    // Reset the visualization to ensure proper scaling
-    resetVisualization();
+    // Debounce resize events
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        // Update canvas dimensions
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        width = canvas.width;
+        height = canvas.height;
+        
+        // Reset visualization
+        resetVisualization();
+    }, 100);
 }
 
 // Handle canvas touch events
