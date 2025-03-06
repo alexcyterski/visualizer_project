@@ -145,10 +145,49 @@ The visualization works by:
 ## Project Structure
 
 - `visualizer_core/` - Main Django app containing the visualization logic
+  - `static/` - Static files for the application
+    - `visualizer_core/css/` - CSS stylesheets
+      - `visualizer-styles.css` - Main stylesheet for the application
+    - `visualizer_core/js/` - JavaScript modules
+      - `visualizer-core.js` - Core functionality, global variables, and settings
+      - `audio-processor.js` - Audio capture and processing functionality
+      - `visualizer.js` - Visualization rendering logic
+      - `ui-controls.js` - User interface controls and interactions
+      - `modal-system.js` - Modal dialog system for instructions and troubleshooting
   - `templates/` - HTML templates for the web interface
+    - `visualizer_core/index.html` - Main template that includes all necessary scripts
   - `views.py` - Django views that render the templates
   - `urls.py` - URL routing for the application
 - `visualizer_project/` - Django project settings and configuration
+
+## Code Organization
+
+The JavaScript code has been refactored into separate modules for better maintainability:
+
+1. **visualizer-core.js**: Contains core functionality and global variables
+   - Manages canvas setup and initialization
+   - Handles device detection and responsive behavior
+   - Defines global settings used across the application
+
+2. **audio-processor.js**: Handles audio capture and processing
+   - Initializes Web Audio API
+   - Manages microphone and system audio capture
+   - Processes audio streams for visualization
+
+3. **visualizer.js**: Implements visualization rendering
+   - Contains the main visualization loop
+   - Implements different visualization types (bars, wave, circular)
+   - Handles drawing and animation
+
+4. **ui-controls.js**: Manages user interface
+   - Sets up event listeners for UI controls
+   - Updates settings based on user input
+   - Manages control visibility and state
+
+5. **modal-system.js**: Provides modal dialog functionality
+   - Creates reusable modal dialogs
+   - Provides help and setup instructions
+   - Handles OS-specific guidance
 
 ## License
 

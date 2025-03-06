@@ -1,0 +1,349 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+}
+
+canvas {
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+.controls {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    z-index: 10;
+    width: 300px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.controls h2 {
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.control-group {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.control-group:last-child {
+    border-bottom: none;
+}
+
+.control-item {
+    margin-bottom: 10px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+}
+
+input[type="range"], select {
+    width: 100%;
+}
+
+input[type="color"] {
+    width: 50px;
+    height: 30px;
+    vertical-align: middle;
+}
+
+.color-preset {
+    display: inline-block;
+    width: 25px;
+    height: 25px;
+    margin: 0 5px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.color-preset.active {
+    border-color: white;
+}
+
+button {
+    padding: 10px 15px;
+    font-size: 14px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+#toggleControls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 11;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    cursor: pointer;
+    display: none;
+}
+
+#status {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    color: white;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    border-radius: 4px;
+    z-index: 10;
+}
+
+.control-item.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+.control-item.disabled input {
+    cursor: not-allowed;
+}
+
+/* Modal styles */
+.modal {
+    display: block;
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.7);
+}
+.modal-content {
+    background-color: #222;
+    color: white;
+    margin: 10% auto;
+    padding: 25px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 700px;
+    max-height: 80vh;
+    /* Fixed height for consistent layout */
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+}
+.modal-header {
+    margin-bottom: 15px;
+}
+.modal-pages {
+    flex: 1;
+    overflow-y: auto;
+    /* Add padding to ensure content doesn't touch the pagination dots */
+    padding-bottom: 15px;
+    /* Fixed height to ensure consistent scrolling area */
+    height: 350px;
+    position: relative;
+}
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.close:hover {
+    color: white;
+}
+.modal-footer {
+    /* Fixed height footer */
+    height: 60px;
+    padding-top: 15px;
+    margin-top: 15px;
+    border-top: 1px solid #444;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+.modal-footer-buttons {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+}
+.modal-footer button {
+    padding: 8px 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+.modal-footer button.secondary {
+    background-color: #555;
+}
+.modal-pagination {
+    display: flex;
+    justify-content: center;
+    /* Add more space between pagination and content */
+    margin: 20px 0;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+.modal-pagination .page-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #555;
+    margin: 0 5px;
+    cursor: pointer;
+}
+.modal-pagination .page-dot.active {
+    background-color: #4CAF50;
+}
+.modal-page {
+    display: none;
+}
+.modal-page.active {
+    display: block;
+}
+.modal h3 {
+    margin-top: 15px;
+    margin-bottom: 10px;
+    color: #4CAF50;
+}
+.modal ul, .modal ol {
+    margin-left: 20px;
+    margin-bottom: 15px;
+}
+.modal li {
+    margin-bottom: 8px;
+}
+.modal-page-title {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #4CAF50;
+}
+.action-buttons {
+    margin-top: 20px;
+    text-align: center;
+}
+.action-buttons button {
+    padding: 10px 20px;
+    margin: 0 10px;
+}
+.os-buttons {
+    display: flex;
+    justify-content: space-around;
+    margin: 20px 0;
+}
+.os-buttons button {
+    padding: 10px 15px;
+    background-color: #555;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+/* Fixed position for navigation buttons */
+.nav-buttons {
+    position: absolute;
+    bottom: 15px;
+    right: 25px;
+    display: flex;
+}
+.left-buttons {
+    position: absolute;
+    bottom: 15px;
+    left: 25px;
+    display: flex;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+    .controls {
+        width: 90%;
+        max-width: 350px;
+        right: 5%;
+        left: 5%;
+        margin: 0 auto;
+        top: 10px;
+        max-height: 80vh;
+    }
+    
+    #toggleControls {
+        display: block !important;
+        top: 10px;
+        right: 10px;
+        z-index: 100;
+    }
+    
+    button {
+        padding: 12px 15px;
+        margin-bottom: 15px;
+        width: 100%;
+        font-size: 16px;
+    }
+    
+    .control-group {
+        margin-bottom: 20px;
+    }
+    
+    /* Make range sliders easier to use on mobile */
+    input[type="range"] {
+        height: 30px;
+    }
+    
+    /* Adjust modal for mobile */
+    .modal-content {
+        width: 95%;
+        margin: 5% auto;
+        padding: 15px;
+        max-height: 90vh;
+    }
+    
+    /* iOS-specific fixes */
+    .ios-device button {
+        -webkit-appearance: none;
+        border-radius: 8px;
+    }
+    
+    .ios-device input[type="range"] {
+        -webkit-appearance: none;
+        height: 30px;
+    }
+    
+    /* Hide controls by default on mobile */
+    .mobile-device .controls {
+        display: none;
+    }
+} 
