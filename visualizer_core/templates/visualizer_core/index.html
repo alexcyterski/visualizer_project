@@ -101,7 +101,7 @@
             
             <div class="control-item">
                 <label for="smoothing">Smoothing: <span id="smoothingValue">0.8</span></label>
-                <input type="range" id="smoothing" min="0" max="0.95" step="0.05" value="0.8">
+                <input type="range" id="smoothing" min="0.5" max="0.99" step="0.01" value="0.8">
             </div>
             
             <div class="control-item" id="barWidthControl">
@@ -177,7 +177,6 @@
                 <select id="particleType">
                     <option value="particles">Particles</option>
                     <option value="bubbles">Bubbles</option>
-                    <option value="mixed">Mixed</option>
                 </select>
             </div>
             
@@ -208,6 +207,13 @@
             
             <div class="control-item">
                 <label>
+                    <input type="checkbox" id="strobeEffect">
+                    Reactive Particle Strobe
+                </label>
+            </div>
+
+            <div class="control-item">
+                <label>
                     <input type="checkbox" id="particleColorSync" checked>
                     Sync with Visualizer Colors
                 </label>
@@ -216,7 +222,7 @@
             <div class="control-item">
                 <label>
                     <input type="checkbox" id="connectLines">
-                    Connect Particles with Lines
+                    Connect Nearby Particles with Lines
                 </label>
             </div>
         </div>

@@ -4,17 +4,18 @@
 // Particle system configuration
 const particleSettings = {
     enabled: true,
-    type: 'particles', // 'particles', 'lines', 'bubbles', 'mixed'
+    type: 'particles', // 'particles', 'lines', 'bubbles'
     count: 100,
     size: 3,
     speed: 1,
     reactivity: 5,
     color: '#ffffff',
     opacity: 0.7,
-    fadeSpeed: 0.02,
+    fadeSpeed: 0.01,
     connectLines: false,
-    lineThreshold: 100,
-    colorSync: true // Sync particle colors with visualization colors
+    lineThreshold: 5000, // Threshold for line visibility, compared to dist squared
+    colorSync: true, // Sync particle colors with visualization colors
+    strobeEffect: false // Make particles flash based on audio signal
 };
 
 // Particle class
@@ -51,13 +52,13 @@ class Particle {
         const reactivity = audioLevel * (this.settings.reactivity / 10);
         
         // Different behavior based on particle type
-        if (this.settings.type === 'particles' || this.settings.type === 'mixed') {
+        if (this.settings.type === 'particles') {
             // Update position with velocity, scaled by deltaTime
             this.x += this.vx * (1 + reactivity) * deltaTime;
             this.y += this.vy * (1 + reactivity) * deltaTime;
             
             // Adjust size based on audio
-            this.size = this.baseSize + (reactivity * 5);
+            this.size = this.baseSize + (reactivity * 20);
             
             // Boundary check - wrap around
             if (this.x < 0) this.x = this.canvas.width;
@@ -89,9 +90,8 @@ class Particle {
             }
         }
         
-        // Only apply fade effect if reactivity is low
-        // This prevents the flashing effect when audio is loud
-        if (this.settings.reactivity < 2) {
+        // Only apply fade effect if bool strobeEffect is true
+        if (this.settings.strobeEffect) {
             this.opacity -= this.settings.fadeSpeed * deltaTime;
             if (this.opacity <= 0.1) {
                 this.opacity = this.settings.opacity;
@@ -199,12 +199,12 @@ class ParticleSystem {
     }
     
     drawConnectingLines() {
-        const threshold = this.settings.lineThreshold || 100;
+        const threshold = this.settings.lineThreshold;
         
         // Optimize line drawing by using a single path
-        this.ctx.globalAlpha = 0.2;
+        this.ctx.globalAlpha = 0.4;
         this.ctx.strokeStyle = this.settings.color;
-        this.ctx.lineWidth = 1;
+        this.ctx.lineWidth = 2;
         this.ctx.beginPath();
         
         // Use spatial partitioning for more efficient neighbor finding
@@ -248,11 +248,14 @@ class ParticleSystem {
                             const distSquared = dx * dx + dy * dy;
                             
                             // Use squared distance for performance (avoid square root)
-                            if (distSquared < threshold * threshold) {
+                            if (distSquared < threshold) {
                                 // Line opacity based on distance
                                 const distance = Math.sqrt(distSquared);
-                                const opacity = 1 - (distance / threshold);
-                                this.ctx.globalAlpha = opacity * 0.2;
+                                const distanceNormalized = Math.min(distance / threshold, 1); // Ensures distance doesn't exceed threshold
+                                const opacity = Math.pow(1 - distanceNormalized, 2); // Use a smoother fade-in/fade-out curve
+                                
+                                // Set opacity in the context, clamping it to a range of 0 to 1
+                                this.ctx.globalAlpha = Math.max(0, Math.min(opacity * 0.2, 1)); // Apply scaling and ensure alpha is in range
                                 
                                 this.ctx.moveTo(p1.x, p1.y);
                                 this.ctx.lineTo(p2.x, p2.y);

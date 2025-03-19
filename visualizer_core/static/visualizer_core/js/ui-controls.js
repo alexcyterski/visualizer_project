@@ -346,6 +346,13 @@ function initParticleControls() {
         }
     });
     
+    // Strobe effect
+    document.getElementById('strobeEffect').addEventListener('input', function() {
+        if (particleSystem) {
+            particleSystem.settings.strobeEffect = this.checked;
+        }
+    });
+
     // Color sync
     document.getElementById('particleColorSync').addEventListener('change', function() {
         if (particleSystem) {

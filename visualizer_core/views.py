@@ -14,8 +14,6 @@ def update_visualization(request):
             data = json.loads(request.body)
             audio_data = data.get('audioData', [])
             
-            # Process the audio data here
-            # This is where you would implement your visualization logic
             
             return JsonResponse({'status': 'success'})
         except Exception as e:
