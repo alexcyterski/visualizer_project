@@ -177,14 +177,18 @@ function drawBars(dataArray, bufferLength) {
         // Get the value and apply frequency-specific adjustments
         let value = dataArray[index];
         
-        // Apply bass reduction (for lower third of the spectrum)
+        // Apply linear bass reduction (for lower third of the spectrum)
         if (i < visibleBarCount / 3) {
-            value = Math.max(0, value - (settings.bassBoost / 100) * 255);
+            let maximum = visibleBarCount / 3;
+            value = Math.max(0, value - (settings.bassBoost / 100) * 255 * (1 - i / maximum));
         }
         
-        // Apply high boost (for upper third of the spectrum)
+        // Apply linear high boost (for upper third of the spectrum)
         if (i > (visibleBarCount * 2) / 3) {
-            value = Math.min(255, value + (settings.highBoost / 100) * 255);
+            let minimum = (visibleBarCount * 2) / 3;
+            if (value != 0) {
+                value = Math.max(0, value + (settings.highBoost / 100) * 255 * ((i - minimum) / (visibleBarCount / 3)));
+            }
         }
         
         // Apply vocal enhancement
@@ -339,14 +343,18 @@ function drawCircular(dataArray, bufferLength) {
         // Get the value and apply frequency-specific adjustments
         let value = dataArray[index];
         
-        // Apply bass reduction (for lower third of the spectrum)
+        // Apply linear bass reduction (for lower third of the spectrum)
         if (i < visibleBarCount / 3) {
-            value = Math.max(0, value - (settings.bassBoost / 100) * 255);
+            let maximum = visibleBarCount / 3;
+            value = Math.max(0, value - (settings.bassBoost / 100) * 255 * (1 - i / maximum));
         }
         
-        // Apply high boost (for upper third of the spectrum)
+        // Apply linear high boost (for upper third of the spectrum)
         if (i > (visibleBarCount * 2) / 3) {
-            value = Math.min(255, value + (settings.highBoost / 100) * 255);
+            let minimum = (visibleBarCount * 2) / 3;
+            if (value != 0) {
+                value = Math.max(0, value + (settings.highBoost / 100) * 255 * ((i - minimum) / (visibleBarCount / 3)));
+            }
         }
         
         // Apply vocal enhancement (for mid-range frequencies where vocals typically sit)
